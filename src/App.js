@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Editor from './Components/Editor';
 import Login from './Components/Login';
 import List from './Components/List';
-import View from './Components/View';
+import About from './Components/About'
 import { supabase } from './supabaseClient';
 import {
   BrowserRouter as Router,
@@ -27,11 +27,6 @@ function App() {
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
-
-    const script = document.createElement("script");
-    script.src = "http://localhost:3000/charm.js";
-    script.async = true;
-    document.body.appendChild(script);
   }, [])
     
   return (
@@ -40,6 +35,7 @@ function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<Login/>} ></Route>
+            <Route path="/about" element={<About/>}/>
             <Route path="*" element={<Navigate to="/login"/>}/>
           </Routes>
         </Router>
@@ -49,9 +45,9 @@ function App() {
             <Routes>
               <Route path="/posts" element={<List/>}/>
               <Route path="/editor" element={<Editor/>}/>
-              <Route path="/editor/:postId" element={<Editor/>} />
-              <Route path="/view/:postId" element={<View/>} />
-              <Route path="*" element={<Navigate to="/posts"/>} />
+              <Route path="/edit/:postId" element={<Editor/>}/>
+              <Route path="/view/:postId" element={<Editor readOnly/>}/>
+              <Route path="*" element={<Navigate to="/posts"/>}/>
             </Routes>
           </Router>
         </>

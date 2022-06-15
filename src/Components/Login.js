@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Image, Input, Spinner, Center, Container, Button, VStack, Text } from '@chakra-ui/react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion } from "framer-motion";
 import Lotus from './Lotus.js';
@@ -36,8 +37,8 @@ function Login() {
           <Lotus/>
           <motion.div
             animate={{opacity: [0, 1], y: [-25, -25]}}
-            transition={{delay: 1, duration: 0.5}}>
-
+            transition={{delay: 1, duration: 0.5}}
+          >
             <VStack alignContent='center' alignItems='center' spacing={5}>
               <Input 
                 style={{textAlign: 'center'}}
@@ -54,24 +55,15 @@ function Login() {
               {(sent && !loading) ? <Text>Check your email for a login link</Text> : <></>}
             </VStack>
           </motion.div>
+          <motion.div
+            animate={{opacity: [0, 1]}}
+            transition={{delay: 2, duration: 0.5}}
+          >
+            <Text size={1} as='i' color='gray.600'><Link to='/about'>Learn More</Link></Text>
+          </motion.div>
         </VStack>
       </Center>
     </Container> 
-
-    // <form onSubmit={handleLogin}>
-    //   <label htmlFor="email">Email</label>
-    //   <input
-    //     id="email"
-    //     className="inputField"
-    //     type="email"
-    //     placeholder="Email"
-    //     value={email}
-    //     onChange={(e)=> setEmail(e.target.value)}
-    //   />
-    //   <button className="button block" aria-live="polite">
-    //     Send Magic Link
-    //   </button>
-    // </form>
   )
 }
 

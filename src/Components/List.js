@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link} from "react-router-dom";
-import { Spinner, Center, Container, Button, VStack, HStack, Flex, Spacer, Text } from '@chakra-ui/react';
-import { Image, Table, Thead, Tbody, Tr, Th, Td, TableContainer } from '@chakra-ui/react';
-import { DeleteIcon, ViewIcon } from '@chakra-ui/icons';
+import { Spinner, Center, Container, Button, VStack, Flex, Text } from '@chakra-ui/react';
+import { DeleteIcon } from '@chakra-ui/icons';
 import { motion } from 'framer-motion';
+import CryptoJS from 'crypto-js'; 
+
 
 function List() {
 
@@ -13,8 +14,23 @@ function List() {
 
   // Run exactly one time: fetch the Posts that belong to the authed user 
   useEffect(() => {
+    checkForEncryptionKey()
     fetchPosts()
   }, [])
+
+  const checkForEncryptionKey = async () => {
+    if(localStorage.getItem('ENC_KEY_' + supabase.auth.user().id )) {
+      console.log(localStorage.getItem('ENC_KEY_' + supabase.auth.user().id ))
+      return
+    } else {
+      let salt = CryptoJS.lib.WordArray.random(128/8);
+      let pass = CryptoJS.lib.WordArray.random(512/8)
+      let key = CryptoJS.PBKDF2(pass, salt, { keySize: 512/32, iterations: 1000})
+
+      localStorage.setItem('ENC_KEY_' + supabase.auth.user().id, key)
+      return
+    }
+  }
 
   // Fetch the Posts that belong to the authed user
   const fetchPosts = async () => { 
@@ -40,32 +56,6 @@ function List() {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-  }
-
-  // Create a new Post belonging to the authed user
-  const createPost = async () => {
-    try {
-      let { data, error } = await supabase
-        .from('posts')
-        .insert([
-          {
-            belongs_to: supabase.auth.user().id,
-            contents: [{
-              type: 'paragraph',
-              children: [{ text: 'Don\'t think just write..' }],
-            }]
-          }
-        ])
-
-      if(error) {
-        throw error
-      }
-
-      console.log(data)
-      setPosts([...posts, data[0]])
-    } catch (error) {
-      console.log(error.message)
-    }
   }
 
   const deletePost = async (id, index) => {
@@ -118,7 +108,8 @@ function List() {
                       <Flex>
                         <Text style={{marginRight: '10px'}} flex='1' align='left' width='150px'><Link to={"/view/" + value.id}>{value.slug}</Link></Text>
                         <Text style={{marginRight: '10px'}}>{value.created_at.substring(0, 10)}</Text>
-                        <Text as='i'>{value.duration + " mins"}</Text>
+                        <Text style={{marginRight: '10px'}} as='i'>{value.duration + " mins"}</Text>
+                        <Text as='i' onClick={() => deletePost(value.id, index)}>Delete</Text>
                       </Flex>
                     </motion.div>
                   )

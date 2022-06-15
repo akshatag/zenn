@@ -8,18 +8,21 @@ import { Transforms, createEditor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history'
 import { supabase } from '../supabaseClient';
+import CryptoJS from 'crypto-js'; 
 import './Editor.css';
 
 
 
 function Editor(props) {
 
+  const readOnly = props.readOnly;
+
   const [durationMins, setDurationMins] = useState(5)
   const [postId, setPostId] = useState(useParams().postId)
   const [timeUp, setTimeUp] = useState(false)
 
-  const [setuptipsModalShown, setSetuptipsModalShown] = useState(false)
-  const [tipsModalShown, setTipstipsModalShown] = useState(false)
+  const [setupModalShown, setSetupModalShown] = useState(readOnly)
+  const [tipsModalShown, setTipsModalShown] = useState(readOnly)
   const [loading, setLoading] = useState(true) 
 
   const [initValue, setInitValue] = useState([
@@ -63,14 +66,19 @@ function Editor(props) {
   Howler.autoSuspend = false;
 
   useEffect(() => {
-    fetchContents();
+    fetchContent();
+    if(readOnly) {
+      startEditor()
+    }
     return () => teardownEditor()
   }, [])
 
   const startEditor = () => { 
-    setTipstipsModalShown(true)
-    startGhostEffect()
-    startTimer()
+    if(!readOnly) {
+      setTipsModalShown(true)
+      startGhostEffect()
+      startTimer()
+    }
     Transforms.select(editor, {path: [0, 0], offset: 21});
   }
 
@@ -89,7 +97,7 @@ function Editor(props) {
   }
 
   const startGhostEffect = () => {
-    setTipstipsModalShown(true)
+    setTipsModalShown(true)
     console.log("setting interval")
     var gInt = setInterval(() => {
       if(document.querySelector('.parent').childElementCount > 1 && !document.querySelector('.parent').firstChild.classList.contains('fade')) {
@@ -120,31 +128,33 @@ function Editor(props) {
     ghostInterval.current = gInt;
   }
   
-  const fetchContents = async () => { 
+  const fetchContent = async () => { 
+
     if(postId) {
       console.log('fetching from db...')
     
       let { data, error, status } = await supabase
         .from('posts')
-        .select(`contents`)
+        .select(`content`)
         .eq('id', postId)
         .single()
       
-      if(data.contents) {
-        console.log(data.contents)
-        setInitValue(data.contents)
+      if(data.content) {
+        let decryptedContent = await decryptString(data.content)
+        setInitValue(JSON.parse(decryptedContent))
         setLoading(false) 
       }
     } else {
       console.log('inserting new post')
       let slug = generateSlug(2, {format: 'kebab', partsOfSpeech: ['noun', 'noun']})
+      let encryptedContent = await encryptString(JSON.stringify(editorValue));
 
       let { data, error, status } = await supabase
         .from('posts')
         .insert({  
           slug: slug,
           belongs_to: supabase.auth.user().id,
-          contents: editorValue,
+          content: encryptedContent,
           duration: durationMins,
           finished: false
         })
@@ -159,6 +169,16 @@ function Editor(props) {
     }
 
   }  
+
+  const encryptString = async (str) => {
+    let key = localStorage.getItem('ENC_KEY_' + supabase.auth.user().id)
+    return CryptoJS.TripleDES.encrypt(str, key).toString()
+  }
+
+  const decryptString = async (hash) => {
+    let key = localStorage.getItem('ENC_KEY_' + supabase.auth.user().id)
+    return CryptoJS.TripleDES.decrypt(hash, key).toString(CryptoJS.enc.Utf8)
+  }
 
   const playSoundEffect = function(event) {    
     if(event.metaKey && event.key == 's') {
@@ -187,10 +207,13 @@ function Editor(props) {
 
   const saveData = async function() {
     console.log('post id ' + postId)
+
+    let encryptedContent = await encryptString(JSON.stringify(editorValue))
+
     if(postId) {
       try {
         const updates = {
-          contents: editorValue
+          content: encryptedContent
         }
   
         let { data, error } = await supabase
@@ -214,7 +237,7 @@ function Editor(props) {
   return (
         <>
           <AnimatePresence>
-            {!setuptipsModalShown && (
+            {!setupModalShown && (
               <motion.div 
                 key="setup"
                 initial={{opacity: 0}}
@@ -232,13 +255,13 @@ function Editor(props) {
                       <Input readOnly variant="flushed" {...durationInput} style={{textAlign: "center"}} value={durationMins}/>
                       <Button variant="ghost" {...durationInc}>+</Button>
                     </HStack>
-                    <Button variant="ghost" onClick={() => setSetuptipsModalShown(true)}>Continue</Button>
+                    <Button variant="ghost" onClick={() => setSetupModalShown(true)}>Continue</Button>
                   </VStack>
                 </Center>
               </motion.div>
             )}
 
-            {setuptipsModalShown && !tipsModalShown && (
+            {setupModalShown && !tipsModalShown && (
               <motion.div 
                 key="tips"
                 initial={{opacity: 0}}
@@ -276,6 +299,7 @@ function Editor(props) {
                       }}
                       >
                       <Editable
+                        readOnly={readOnly}
                         spellCheck
                         autoFocus
                         height="1000px"
