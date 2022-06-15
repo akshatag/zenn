@@ -86,7 +86,7 @@ function List() {
             <Spinner/>
             </Center>
           </Container>
-        ) :
+        ) : 
         (
           <Container maxW='sm' marginTop='20vh'>
             <Center>
