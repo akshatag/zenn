@@ -1,0 +1,11 @@
+.listEntry {
+
+}
+
+.listEntry > div {
+  opacity: 0;
+}
+
+.listEntry:hover > div {
+  opacity: 1
+}

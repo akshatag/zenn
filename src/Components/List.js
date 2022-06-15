@@ -5,7 +5,7 @@ import { Spinner, Center, Container, Button, VStack, Flex, Text } from '@chakra-
 import { DeleteIcon } from '@chakra-ui/icons';
 import { motion } from 'framer-motion';
 import CryptoJS from 'crypto-js'; 
-
+import './List.css'
 
 function List() {
 
@@ -109,7 +109,9 @@ function List() {
                         <Text style={{marginRight: '10px'}} flex='1' align='left' width='150px'><Link to={"/view/" + value.id}>{value.slug}</Link></Text>
                         <Text style={{marginRight: '10px'}}>{value.created_at.substring(0, 10)}</Text>
                         <Text style={{marginRight: '10px'}} as='i'>{value.duration + " mins"}</Text>
-                        <Text as='i' onClick={() => deletePost(value.id, index)}>Delete</Text>
+                        <div>
+                          <Text as='i' onClick={() => deletePost(value.id, index)}>Delete</Text>
+                        </div>
                       </Flex>
                     </motion.div>
                   )
