@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+Antique&display=swap');
+
+.editable{
+  /* font-family:'Times New Roman', Times, serif; */
+  font-family: 'Inter', sans-serif;
+}
+
+.parent {
+  /* font-family: 'Source Code Pro', monospace;   */
+  font-family: 'Zen Kaku Gothic Antique', sans-serif;
+  caret-color: red;
+}
+
+.parent > div {
+  max-height: 100px;
+}
+
+.phaseOut {
+  -webkit-animation: phase 1s cubic-bezier(0.42, 0, 1, 1);
+  animation: phase 1s cubic-bezier(0.42, 0, 1, 1);
+}
+
+@-webkit-keyframes phase {
+  0% { opacity: 1; max-height: 100px; }
+  60% { opacity: 0; max-height: 100px; }
+  100% { opacity: 0; max-height: 0px; }
+}
+  
+@keyframes phase {
+  0% { opacity: 1; max-height: 100px; }
+  60% { opacity: 0; max-height: 100px; }
+  100% { opacity: 0; max-height: 0px; }
+}
+
+
+
+/* ======================= OLD ANIMATION CODE ========================== */
+/* .fade {
+  -webkit-animation: fade 0.5s cubic-bezier(0.42, 0, 1, 1) forwards;
+  animation: fade 0.5s cubic-bezier(0.42, 0, 1, 1) forwards;
+}
+
+.shorten {
+  max-height: 0px !important;
+  transition: max-height 1s cubic-bezier(0.42, 0, 1, 1);
+}
+
+@-webkit-keyframes fade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+  
+@keyframes fade {
+  0% { opacity: 1;}
+  100% { opacity: 0; }
+} */
+
