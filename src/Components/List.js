@@ -129,11 +129,11 @@ function List() {
           <Container maxW='sm' marginTop='25vh'>
             <Center>
               <VStack>
-                <Button w='300px'>
-                  <Link to="/editor">
-                    write
-                  </Link>
-                </Button>
+                <Link to="/editor">
+                  <Button w='300px'>
+                      write
+                  </Button>
+                </Link>
                 {
                   posts.length == 0 ? 
                   <Text as='i'>Journal is empty...</Text>
