@@ -1,4 +1,4 @@
-import { useNumberInput, Icon, Image, VStack, Input, HStack, Text, Button, Container, Center, useToast, Modal, ModalBody, ModalHeader, ModalFooter, ModalOverlay, ModalContent } from '@chakra-ui/react';
+import { useNumberInput, Flex, Box, Icon, Image, VStack, Input, HStack, Text, Button, Container, Center, useToast, Modal, ModalBody, ModalHeader, ModalFooter, ModalOverlay, ModalContent } from '@chakra-ui/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -33,11 +33,12 @@ function Editor(props) {
   ])
 
   const [editor] = useState(()=>withReact(withHistory(createEditor())))
-  let editorValue;
 
+  const editorValue = useRef(initValue);
   const navigate = useNavigate();
   const postSavedToast = useToast();
   const ghostInterval = useRef();
+  const autosaveInterval = useRef();
   const timer = useRef();
 
   const { getInputProps, getIncrementButtonProps, getDecrementButtonProps } =
@@ -77,6 +78,7 @@ function Editor(props) {
     if(!readOnly) {
       setTipsModalShown(true)
       startGhostEffect()
+      startAutosave()
       startTimer()
     }
     Transforms.select(editor, {path: [0, 0], offset: 21});
@@ -85,6 +87,7 @@ function Editor(props) {
   const teardownEditor = () => {
     console.log("removing interval " + ghostInterval.current)
     console.log(clearInterval(ghostInterval.current))
+    console.log(clearInterval(autosaveInterval.current))
     console.log(clearTimeout(timer.current))
   }
 
@@ -127,6 +130,15 @@ function Editor(props) {
     console.log(gInt)
     ghostInterval.current = gInt;
   }
+
+  const startAutosave = () => {
+    console.log("starting autosave")
+    var gInt = setInterval(() => {
+      saveData()
+    }, 5000)
+    console.log(gInt)
+    autosaveInterval.current = gInt;
+  }
   
   const fetchContent = async () => { 
 
@@ -147,7 +159,7 @@ function Editor(props) {
     } else {
       console.log('inserting new post')
       let slug = generateSlug(2, {format: 'kebab', partsOfSpeech: ['noun', 'noun']})
-      let encryptedContent = await encryptString(JSON.stringify(editorValue));
+      let encryptedContent = await encryptString(JSON.stringify(editorValue.current));
 
       let { data, error, status } = await supabase
         .from('posts')
@@ -185,11 +197,18 @@ function Editor(props) {
       event.preventDefault();
       saveData().then(
         postSavedToast({
-          position: 'bottom-right',
+          position: 'top-right',
           description: "Saved :)",
           status: 'success',
           duration: 1000,
           isClosable: false,
+          render: () => (
+            <Box bg='white' alignContent='center' marginRight='30px' marginTop='20px'>
+              <Flex direction='row'>
+                <Text flex={1} align='right' color='gray.600'>(autosaved)</Text>
+              </Flex>
+            </Box>
+          )
         }));
       return
     } 
@@ -207,8 +226,9 @@ function Editor(props) {
 
   const saveData = async function() {
     console.log('post id ' + postId)
+    console.log('editor value: ' + JSON.stringify(editorValue.current))
 
-    let encryptedContent = await encryptString(JSON.stringify(editorValue))
+    let encryptedContent = await encryptString(JSON.stringify(editorValue.current))
 
     if(postId) {
       try {
@@ -295,7 +315,7 @@ function Editor(props) {
                       editor={editor} 
                       value={initValue}
                       onChange={(_value)=>{
-                        editorValue = _value
+                        editorValue.current = _value
                       }}
                       >
                       <Editable
