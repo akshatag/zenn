@@ -162,7 +162,7 @@ function List() {
                 }
               </VStack>
             </Center>
-            <Button style={{position: 'fixed', bottom: '2vh', right: '2vh'}} variant='ghost' onClick={signOut}>sign out</Button>
+            <Button style={{position: 'fixed', bottom: '2vh', right: '2vh'}} variant='ghost' onClick={signOut}>close journal</Button>
           </Container>
         )
       }

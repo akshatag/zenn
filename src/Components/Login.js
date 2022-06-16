@@ -45,7 +45,7 @@ function Login() {
                 variant='flushed'
                 id='input'
                 type='text' 
-                placeholder='Email'
+                placeholder='email'
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               >
