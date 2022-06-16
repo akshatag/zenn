@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link} from "react-router-dom";
-import { Spinner, Center, Container, Button, VStack, Flex, Text } from '@chakra-ui/react';
+import { Spinner, Center, Container, Button, VStack, HStack, Flex, Text, Box, useToast } from '@chakra-ui/react';
 import { DeleteIcon } from '@chakra-ui/icons';
 import { motion } from 'framer-motion';
 import CryptoJS from 'crypto-js'; 
@@ -11,6 +11,7 @@ function List() {
 
   const [loading, setLoading] = useState(true)
   const [posts, setPosts] = useState([])  
+  const nameUpdatedToast = useToast()
 
   // Run exactly one time: fetch the Posts that belong to the authed user 
   useEffect(() => {
@@ -76,6 +77,43 @@ function List() {
     }
   }
 
+  const renamePost = async (event, id, index) => {
+    if(posts[index].slug != event.target.textContent) {
+      // alert(event.target.textContent + ' and ' + id + ' and ' + index)
+      try {
+        let { data, error } = await supabase
+          .from('posts')
+          .update({slug: event.target.textContent})
+          .eq('id', id)
+  
+        if(error) {
+          throw error
+        }
+
+        posts[index].slug = event.target.textContent;
+        setPosts(posts)
+        nameUpdatedToast({
+          position: 'top-right',
+          description: "Name updated",
+          status: 'success',
+          duration: 1000,
+          isClosable: false,
+          render: () => (
+            <Box bg='white' alignContent='center' marginRight='30px' marginTop='20px'>
+              <Flex direction='row'>
+                <Text flex={1} align='right' color='gray.600'>Journal entry updated</Text>
+              </Flex>
+            </Box>
+          )
+        })
+
+      } catch (error) {
+        console.log(error.message)
+      }
+    } 
+  }
+
+
   // If loading show the spinner else show the list of Posts for the user
   return (
     <>
@@ -88,37 +126,43 @@ function List() {
           </Container>
         ) : 
         (
-          <Container maxW='sm' marginTop='20vh'>
+          <Container maxW='sm' marginTop='25vh'>
             <Center>
               <VStack>
-                <Button variant='ghost' w='100%'>
+                <Button w='300px'>
                   <Link to="/editor">
-                    Write
+                    write
                   </Link>
                 </Button>
-
-                <Text as='i' casing='uppercase' style={{marginTop: '20vh', marginBottom: '2vh'}}>Previous entries...</Text>
-                {posts.map((value, index) => {
-                  return (
-                    <motion.div
-                      initial={{opacity: 0}}
-                      animate={{opacity: 1}}
-                      transition={{delay: 0.20*index, duration: 0.5}}
-                    >
-                      <Flex>
-                        <Text style={{marginRight: '10px'}} flex='1' align='left' width='150px'><Link to={"/view/" + value.id}>{value.slug}</Link></Text>
-                        <Text style={{marginRight: '10px'}}>{value.created_at.substring(0, 10)}</Text>
-                        <Text style={{marginRight: '10px'}} as='i'>{value.duration + " mins"}</Text>
-                        <div>
-                          <Text as='i' onClick={() => deletePost(value.id, index)}>Delete</Text>
-                        </div>
-                      </Flex>
-                    </motion.div>
-                  )
-                })}
+                {
+                  posts.length == 0 ? 
+                  <Text as='i'>Journal is empty...</Text>
+                  : 
+                  <Container style={{marginTop: '40px'}} width='800px'>
+                    {posts.map((value, index) => {
+                      return (
+                        <motion.div
+                          initial={{opacity: 0}}
+                          animate={{opacity: 1}}
+                          transition={{delay: 0.20*index, duration: 0.5}}
+                        >
+                          <HStack className='listEntry'>
+                            <Text style={{marginRight: '5px'}} align='right' width='308px'>{value.created_at.substring(0, 10)}</Text>
+                            <Text contentEditable onBlur={(e)=>renamePost(e, value.id, index)} style={{marginRight: '5px', maxWidth: '250px', whiteSpace: 'nowrap', overflow:'hidden'}} align='left'>{value.slug}</Text>
+                            <Text className='listMenuItem' color='gray.500'><Link to={"/view/" + value.id}>open</Link></Text>
+                            <Text className='listMenuItem' color='gray.500' onClick={() => deletePost(value.id, index)}>discard</Text>
+                            {/* <div>
+                              
+                            </div> */}
+                          </HStack>
+                        </motion.div>
+                      )
+                    })}
+                  </Container>
+                }
               </VStack>
             </Center>
-            <Button style={{position: 'fixed', top: '2vh', right: '2vh'}} variant='ghost' onClick={signOut}>Sign out</Button>
+            <Button style={{position: 'fixed', bottom: '2vh', right: '2vh'}} variant='ghost' onClick={signOut}>sign out</Button>
           </Container>
         )
       }

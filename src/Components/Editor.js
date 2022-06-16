@@ -275,7 +275,7 @@ function Editor(props) {
                       <Input readOnly variant="flushed" {...durationInput} style={{textAlign: "center"}} value={durationMins}/>
                       <Button variant="ghost" {...durationInc}>+</Button>
                     </HStack>
-                    <Button variant="ghost" onClick={() => setSetupModalShown(true)}>Continue</Button>
+                    <Button variant="ghost" onClick={() => setSetupModalShown(true)}>continue</Button>
                   </VStack>
                 </Center>
               </motion.div>
@@ -296,7 +296,7 @@ function Editor(props) {
                       Play some relaxing music. <br/>
                       Make this full screen.
                     </Text>
-                    <Button variant="ghost" onClick={() => startEditor()}>Start</Button>
+                    <Button variant="ghost" onClick={() => startEditor()}>start</Button>
                   </VStack>
                 </Center>
               </motion.div>

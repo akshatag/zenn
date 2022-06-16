@@ -1,11 +1,27 @@
 .listEntry {
-
+  position: relative;
+  margin-bottom: 10px;
 }
 
-.listEntry > div {
+.listEntry > .listMenuItem {
   opacity: 0;
+  cursor: pointer;
+  /* position: absolute;
+  right: -50px; */
 }
 
-.listEntry:hover > div {
-  opacity: 1
+@keyframes fadeInAndSlideRight {
+  from {opacity: 0; left: -100px}
+  to {opacity: 1; left: 0px}
+}
+
+.listEntry:hover > .listMenuItem {
+  animation-name: fadeInAndSlideRight;
+  animation-duration: 0.5s;
+  opacity: 1;
+}
+
+
+[contenteditable] {
+  outline: 0px solid transparent;
 }
