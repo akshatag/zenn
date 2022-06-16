@@ -28,8 +28,10 @@ function Editor(props) {
   const [initValue, setInitValue] = useState([
     {
       type: 'paragraph',
-      children: [{ text: 'Just start writing...' }],
+      children: [{ text: 'Start writing...' }],
     },
+    {"type":"paragraph","children":[{"text":""}]},
+    {"type":"paragraph","children":[{"text":""}]}
   ])
 
   const [editor] = useState(()=>withReact(withHistory(createEditor())))
@@ -56,7 +58,7 @@ function Editor(props) {
   const durationInput = getInputProps()
   
   const sound = new Howl({
-    src: ['/clickLow.wav'],
+    src: ['/clickLower.wav'],
     format: ['wav'],
     autoSuspend: false,
     preload: true,
@@ -81,7 +83,7 @@ function Editor(props) {
       startAutosave()
       startTimer()
     }
-    Transforms.select(editor, {path: [0, 0], offset: 21});
+    Transforms.select(editor, {path: [2, 0], offset: 0});
   }
 
   const teardownEditor = () => {
@@ -213,7 +215,7 @@ function Editor(props) {
       return
     } 
 
-    const noSoundList = ['Enter', 'Backspace', 'Esc', 'ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp']
+    const noSoundList = ['Enter', 'Backspace', 'Esc', 'ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'Shift']
 
     if(!noSoundList.includes(event.key) && !event.metaKey) {
       try{
@@ -268,7 +270,7 @@ function Editor(props) {
                   <VStack w='sm' spacing={8}>
                     <Image boxSize='100px' src='./hourglass.svg'/>
                     <Text>
-                      How many minutes do you want to write for? 
+                      how many minutes do you want to write for? 
                     </Text>
                     <HStack maxW='200px'>
                       <Button variant="ghost" {...durationDec}>-</Button>
@@ -292,11 +294,10 @@ function Editor(props) {
                   <VStack w='sm' spacing={8}>
                     <Image boxSize='100px' src='./headphones.svg'/>
                     <Text textAlign='center'>
-                      For the best experience, wear some headphones. <br/>
-                      Play some relaxing music. <br/>
-                      Make this full screen.
+                      for the best experience:<br/>
+                      play some relaxing music and make this full screen.
                     </Text>
-                    <Button variant="ghost" onClick={() => startEditor()}>start</Button>
+                    <Button variant="ghost" onClick={() => startEditor()}>begin</Button>
                   </VStack>
                 </Center>
               </motion.div>
@@ -320,7 +321,7 @@ function Editor(props) {
                       >
                       <Editable
                         readOnly={readOnly}
-                        spellCheck
+                        spellCheck={false}
                         autoFocus
                         height="1000px"
                         className="parent"
