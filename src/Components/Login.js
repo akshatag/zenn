@@ -50,16 +50,16 @@ function Login() {
                 onChange={(e) => setEmail(e.target.value)}
               >
               </Input>
-              {!sent ? <Button onClick={login}>Send Magic Link</Button> : <></>}
+              {!sent ? <Button onClick={login}>send magic link</Button> : <></>}
               {loading ? <Spinner /> : <></>}
-              {(sent && !loading) ? <Text>Check your email for a login link</Text> : <></>}
+              {(sent && !loading) ? <Text>check your inbox</Text> : <></>}
             </VStack>
           </motion.div>
           <motion.div
             animate={{opacity: [0, 1]}}
             transition={{delay: 2, duration: 0.5}}
           >
-            <Text size={1} as='i' color='gray.600'><Link to='/about'>Learn More</Link></Text>
+            <Text size={1} color='gray.500'><Link to='/about'>learn more</Link></Text>
           </motion.div>
         </VStack>
       </Center>
