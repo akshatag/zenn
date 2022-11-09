@@ -25,6 +25,8 @@ function Editor(props) {
   const [tipsModalShown, setTipsModalShown] = useState(readOnly)
   const [loading, setLoading] = useState(true) 
 
+  const [promptText, setPromptText] = useState("")
+
   const [initValue, setInitValue] = useState([
     {
       type: 'paragraph',
@@ -34,13 +36,16 @@ function Editor(props) {
     {"type":"paragraph","children":[{"text":""}]}
   ])
 
+
   const [editor] = useState(()=>withReact(withHistory(createEditor())))
 
   const editorValue = useRef(initValue);
   const navigate = useNavigate();
   const postSavedToast = useToast();
   const ghostInterval = useRef();
+  const promptInterval = useRef();
   const autosaveInterval = useRef();
+  const lastKeystrokeTimestamp = useRef();
   const timer = useRef();
 
   const { getInputProps, getIncrementButtonProps, getDecrementButtonProps } =
@@ -80,6 +85,7 @@ function Editor(props) {
     if(!readOnly) {
       setTipsModalShown(true)
       startGhostEffect()
+      startPromptEffect()
       startAutosave()
       startTimer()
     }
@@ -131,6 +137,18 @@ function Editor(props) {
     }, 10000)
     console.log(gInt)
     ghostInterval.current = gInt;
+  }
+
+  const startPromptEffect = () => {
+    lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
+    var pInt = setInterval(() => {
+      if(Math.floor(Date.now()/1000) - lastKeystrokeTimestamp.current > 10) {
+        console.log('five second rule!')
+        lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
+        setPromptText('' + Math.floor(Date.now()/1000))
+      }
+    }, 1000)
+    promptInterval.current = pInt
   }
 
   const startAutosave = () => {
@@ -220,6 +238,7 @@ function Editor(props) {
     if(!noSoundList.includes(event.key) && !event.metaKey) {
       try{
         sound.play()
+        lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
       } catch (error) {
         alert(error.message)
       } 
@@ -227,8 +246,8 @@ function Editor(props) {
   }
 
   const saveData = async function() {
-    console.log('post id ' + postId)
-    console.log('editor value: ' + JSON.stringify(editorValue.current))
+    // console.log('post id ' + postId)
+    // console.log('editor value: ' + JSON.stringify(editorValue.current))
 
     let encryptedContent = await encryptString(JSON.stringify(editorValue.current))
 
@@ -312,6 +331,9 @@ function Editor(props) {
               >
                 <Center>
                   <Container maxW='md' h="1000px" marginTop="20vh"> 
+                    <Text textAlign='left'>
+                      {promptText}
+                    </Text>
                     <Slate height="1000px" width="50%" 
                       editor={editor} 
                       value={initValue}
