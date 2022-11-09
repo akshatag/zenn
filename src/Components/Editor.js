@@ -25,7 +25,7 @@ function Editor(props) {
   const [tipsModalShown, setTipsModalShown] = useState(readOnly)
   const [loading, setLoading] = useState(true) 
 
-  const [promptText, setPromptText] = useState("")
+  const [promptText, setPromptText] = useState("&nbsp")
 
   const [initValue, setInitValue] = useState([
     {
@@ -145,7 +145,12 @@ function Editor(props) {
       if(Math.floor(Date.now()/1000) - lastKeystrokeTimestamp.current > 10) {
         console.log('five second rule!')
         lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
-        setPromptText('' + Math.floor(Date.now()/1000))
+        setPromptText('Keep writing...')
+        document.querySelector('.promptText').style.opacity = 1; 
+
+        setTimeout(() => {
+          document.querySelector('.promptText').style.opacity = 0;
+        }, 5000)
       }
     }, 1000)
     promptInterval.current = pInt
@@ -331,7 +336,7 @@ function Editor(props) {
               >
                 <Center>
                   <Container maxW='md' h="1000px" marginTop="20vh"> 
-                    <Text textAlign='left'>
+                    <Text className="promptText" textAlign='left' marginBottom="2vh">
                       {promptText}
                     </Text>
                     <Slate height="1000px" width="50%" 
