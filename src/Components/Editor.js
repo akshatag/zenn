@@ -8,25 +8,28 @@ import { Transforms, createEditor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history'
 import { supabase } from '../supabaseClient';
+import mixpanel from 'mixpanel-browser';
 import CryptoJS from 'crypto-js'; 
 import './Editor.css';
 
 
-
 function Editor(props) {
 
+  // readOnly prop indicates to component whether this is a new journal session (edit) or viewing a prior session (read)
   const readOnly = props.readOnly;
 
+  // State for USER SETTINGS for the journal session
   const [durationMins, setDurationMins] = useState(5)
-  const [postId, setPostId] = useState(useParams().postId)
-  const [timeUp, setTimeUp] = useState(false)
 
+  // State that controls lifecycle of the editor - setup, tips, editing, timeup, etc.
+  const [loading, setLoading] = useState(true) 
   const [setupModalShown, setSetupModalShown] = useState(readOnly)
   const [tipsModalShown, setTipsModalShown] = useState(readOnly)
-  const [loading, setLoading] = useState(true) 
+  const [timeUp, setTimeUp] = useState(false)
 
+  // State about the editor 
+  const [postId, setPostId] = useState(useParams().postId)
   const [promptText, setPromptText] = useState("&nbsp")
-
   const [initValue, setInitValue] = useState([
     {
       type: 'paragraph',
@@ -35,19 +38,24 @@ function Editor(props) {
     {"type":"paragraph","children":[{"text":""}]},
     {"type":"paragraph","children":[{"text":""}]}
   ])
-
-
   const [editor] = useState(()=>withReact(withHistory(createEditor())))
 
+  // Refs - some references are redundant with state because useEffect hooks can't access updated state and must use Refs
   const editorValue = useRef(initValue);
-  const navigate = useNavigate();
-  const postSavedToast = useToast();
   const ghostInterval = useRef();
   const promptInterval = useRef();
   const autosaveInterval = useRef();
   const lastKeystrokeTimestamp = useRef();
   const timer = useRef();
+  const durationSeconds = useRef();
+  const journalStartTime = useRef();
+  const sessionComplete = useRef(false);
 
+  // Other effects
+  const navigate = useNavigate();
+  const postSavedToast = useToast();
+
+  // State related to the increment/decrement UI to set the duration setting
   const { getInputProps, getIncrementButtonProps, getDecrementButtonProps } =
   useNumberInput({
     step: 1,
@@ -57,11 +65,11 @@ function Editor(props) {
     precision: 0,
     onChange: (valueString) => setDurationMins(parseInt(valueString))
   })
-
   const durationInc = getIncrementButtonProps()
   const durationDec = getDecrementButtonProps()
   const durationInput = getInputProps()
-  
+
+  // Set up the typing sound effect
   const sound = new Howl({
     src: ['/clickLower.wav'],
     format: ['wav'],
@@ -70,43 +78,62 @@ function Editor(props) {
     volume: 1,
     onloaderror: (id, msg)=>alert('loaderror, id: ' + id  + msg)
   });
-
   Howler.autoSuspend = false;
 
+  // useEffect is called ONCE when component mounts and the function it returns is called before component unloads  
   useEffect(() => {
+    mixpanel.init('62f060ede5004cdf8b70946f12ffb0a8', {debug: true}); 
+    mixpanel.identify(supabase.auth.user().id)
+    mixpanel.register({'env': process.env.REACT_APP_SUPABASE_ENV});
+
     fetchContent();
     if(readOnly) {
       startEditor()
     }
+
     return () => teardownEditor()
   }, [])
 
+
+  // starts the editor and all the various effects
   const startEditor = () => { 
     if(!readOnly) {
       setTipsModalShown(true)
       startGhostEffect()
-      startPromptEffect()
+      // startPromptEffect()
       startAutosave()
       startTimer()
     }
     Transforms.select(editor, {path: [2, 0], offset: 0});
   }
 
+  // tears down the editor and write analytics before component unmounts
   const teardownEditor = () => {
+    mixpanel.track('journal_session', {
+      'completed?' : sessionComplete.current,
+      'session_length_intended' : durationSeconds.current,
+      'session_length_actual' : Math.ceil((Date.now() - journalStartTime.current)/1000)
+    })
+    // console.log("completed session? " + sessionComplete.current)
+    // console.log("length of session " + Math.ceil((Date.now() - journalStartTime.current)/1000) + " seconds") 
     console.log("removing interval " + ghostInterval.current)
     console.log(clearInterval(ghostInterval.current))
     console.log(clearInterval(autosaveInterval.current))
     console.log(clearTimeout(timer.current))
   }
 
+  // starts a timer that ends when the specified duration of the session is up
   const startTimer = () => {
     console.log('starting timer for ' + durationMins + ' minutes')
-
+    journalStartTime.current = Date.now()
+    durationSeconds.current = durationMins*60
     timer.current = setTimeout(() => {
+      sessionComplete.current = true;
       setTimeUp(true)
     }, durationMins*60000) 
   }
 
+  // starts the ghost effect wherein the top block of text disappears periodically
   const startGhostEffect = () => {
     setTipsModalShown(true)
     console.log("setting interval")
@@ -139,23 +166,25 @@ function Editor(props) {
     ghostInterval.current = gInt;
   }
 
-  const startPromptEffect = () => {
-    lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
-    var pInt = setInterval(() => {
-      if(Math.floor(Date.now()/1000) - lastKeystrokeTimestamp.current > 10) {
-        console.log('five second rule!')
-        lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
-        setPromptText('Keep writing...')
-        document.querySelector('.promptText').style.opacity = 1; 
+  // Prompts the user to keep writing if they have been idle for more than 10 seconds
+  // const startPromptEffect = () => {
+  //   lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
+  //   var pInt = setInterval(() => {
+  //     if(Math.floor(Date.now()/1000) - lastKeystrokeTimestamp.current > 10) {
+  //       console.log('five second rule!')
+  //       lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
+  //       setPromptText('Keep writing...')
+  //       document.querySelector('.promptText').style.opacity = 1; 
 
-        setTimeout(() => {
-          document.querySelector('.promptText').style.opacity = 0;
-        }, 5000)
-      }
-    }, 1000)
-    promptInterval.current = pInt
-  }
+  //       setTimeout(() => {
+  //         document.querySelector('.promptText').style.opacity = 0;
+  //       }, 5000)
+  //     }
+  //   }, 1000)
+  //   promptInterval.current = pInt
+  // }
 
+  // Starts autosaving what is typed every 5 seconds
   const startAutosave = () => {
     console.log("starting autosave")
     var gInt = setInterval(() => {
@@ -165,8 +194,8 @@ function Editor(props) {
     autosaveInterval.current = gInt;
   }
   
+  // Either fetches the content of the post (view mode) or creates a new post in the database (edit mode)
   const fetchContent = async () => { 
-
     if(postId) {
       console.log('fetching from db...')
     

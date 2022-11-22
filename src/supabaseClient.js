@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
+console.log("env: " + process.env.REACT_APP_SUPABASE_ENV)
 console.log("anon key: " + process.env.REACT_APP_SUPABASE_ANON_KEY)
 console.log("url: " + process.env.REACT_APP_SUPABASE_URL)
 
