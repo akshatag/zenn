@@ -14,9 +14,9 @@ function About() {
           transition={{duration: 1, delay: 0.5}}
         >
           <Text>
-            Zenn is a distraction-free writing environment designed for <u><a href='https://creativeprimer.com/stream-of-consciousness-journaling-guide/'>stream of consciousness</a></u> journaling. I've found this kind of journaling to be extremely meditative and refreshing. It's a great remedy for a restless mind. 
+            Zenn is a scratchpad for your mind. Writing is proven to be an effective remedy for a restless mind. Zenn offers a quiet, distraction free place to spill your thoughts. Zenn also offers you the wisdom of prominent philosophers like the Buddha who can assist you on your meditative journey. 
             <br/><br/>
-            The privacy of your journal entries is of the utmost importance. Journal entries are protected using user-level encryption and row-level security. In other words: <b>only you, on this specific device, can access the contents of your journal</b>. Nobody else, not even Zenn. Hopefully this gives you the peace of mind to utilize Zenn to its fullest extent.
+            The privacy of your writing is paramount. Zenn encrypts all of your writing at the browser level. This means only you, on this device and browser, can access your writing (test it out -- try accessing Zenn from a different device or browser. You'll find you can't access what you write here.)
           </Text>
         </motion.div>
       </Center>

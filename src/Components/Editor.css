@@ -8,19 +8,30 @@
 .parent {
   /* font-family: 'Source Code Pro', monospace;   */
   font-family: 'Zen Kaku Gothic Antique', sans-serif;
-  caret-color: red;
+  caret-color: black;
 }
 
 .parent > div {
   max-height: 100px;
 }
 
+.promptTextContainer { 
+  height: 150px; 
+  max-height: 150px;
+  width: 100%;
+  display: table-cell;
+  vertical-align: bottom;
+  overflow-y: hidden;
+  padding-bottom: 20px;
+}
+
 .promptText { 
-  opacity: 0;
+  opacity: 1;
   color: gray;
   transition: opacity 0.5s ease;
   font-style: italic;
 }
+
 
 .phaseOut {
   -webkit-animation: phase 1s cubic-bezier(0.42, 0, 1, 1);

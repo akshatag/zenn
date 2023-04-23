@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Image, Input, Spinner, Center, Container, Button, VStack, Text } from '@chakra-ui/react';
+import { Image, Input, Spinner, Center, Container, Button, VStack, Text, Spacer } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { motion } from "framer-motion";
@@ -31,17 +31,26 @@ function Login() {
 
   return (
 
-    <Container marginTop='20%'> 
+    <Container marginTop='30vh'> 
       <Center>
-        <VStack spacing={5}>
+        <VStack>
           <Lotus/>
           <motion.div
             animate={{opacity: [0, 1], y: [-25, -25]}}
             transition={{delay: 1, duration: 0.5}}
           >
-            <VStack alignContent='center' alignItems='center' spacing={5}>
+            <Text style={{marginTop: '-15px'}}>
+                  Zenn
+            </Text>
+          </motion.div>
+
+          <motion.div
+            animate={{opacity: [0, 1], y: [-25, -25]}}
+            transition={{delay: 2, duration: 0.5}}
+          >
+            <VStack alignContent='center' alignItems='center'>
               <Input 
-                style={{textAlign: 'center'}}
+                style={{textAlign: 'center', marginTop: '50px'}}
                 variant='flushed'
                 id='input'
                 type='text' 
@@ -50,19 +59,23 @@ function Login() {
                 onChange={(e) => setEmail(e.target.value)}
               >
               </Input>
-              {!sent ? <Button onClick={login}>send magic link</Button> : <></>}
+              {!sent ? <Button size="sm" style={{color: "gray", marginTop: "2vh"}} onClick={login}>send magic link</Button> : <></>}
               {loading ? <Spinner /> : <></>}
-              {(sent && !loading) ? <Text>check your inbox</Text> : <></>}
+              {(sent && !loading) ? <Text style={{fontSize: "16px", color: "gray", marginTop: "2vh"}}><i>check your inbox</i></Text> : <></>}
             </VStack>
-          </motion.div>
-          <motion.div
-            animate={{opacity: [0, 1]}}
-            transition={{delay: 2, duration: 0.5}}
-          >
-            <Text size={1} color='gray.500'><Link to='/about'>learn more</Link></Text>
           </motion.div>
         </VStack>
       </Center>
+      <motion.div
+        animate={{opacity: [0, 1]}}
+        transition={{delay: 3, duration: 0.5}}
+      >
+        <Text position="fixed" bottom="50px" left="30px" color='gray.500'><Link to='/about'>what's zenn?</Link></Text>
+        <Text position="fixed" bottom="25px" left="30px">
+          made with &#x2665; at taro labs
+        </Text>
+        
+      </motion.div>
     </Container> 
   )
 }

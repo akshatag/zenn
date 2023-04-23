@@ -1,4 +1,4 @@
-import { useNumberInput, Flex, Box, Icon, Image, VStack, Input, HStack, Text, Button, Container, Center, useToast, Modal, ModalBody, ModalHeader, ModalFooter, ModalOverlay, ModalContent } from '@chakra-ui/react';
+import { useNumberInput, Flex, Box, Icon, Image, VStack, Input, HStack, Text, Textarea, Button, Container, Center, useToast, Modal, ModalBody, ModalHeader, ModalFooter, ModalOverlay, ModalContent } from '@chakra-ui/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,7 +10,10 @@ import { withHistory } from 'slate-history'
 import { supabase } from '../supabaseClient';
 import mixpanel from 'mixpanel-browser';
 import CryptoJS from 'crypto-js'; 
+import waitForElementTransition from 'wait-for-element-transition';
 import './Editor.css';
+import { createClient } from '@supabase/supabase-js'
+
 
 
 function Editor(props) {
@@ -29,14 +32,11 @@ function Editor(props) {
 
   // State about the editor 
   const [postId, setPostId] = useState(useParams().postId)
-  const [promptText, setPromptText] = useState("&nbsp")
   const [initValue, setInitValue] = useState([
     {
       type: 'paragraph',
-      children: [{ text: 'Start writing...' }],
-    },
-    {"type":"paragraph","children":[{"text":""}]},
-    {"type":"paragraph","children":[{"text":""}]}
+      children: [{ text: '' }],
+    }
   ])
   const [editor] = useState(()=>withReact(withHistory(createEditor())))
 
@@ -50,6 +50,7 @@ function Editor(props) {
   const durationSeconds = useRef();
   const journalStartTime = useRef();
   const sessionComplete = useRef(false);
+  const GPTCompletions = useRef({})
 
   // Other effects
   const navigate = useNavigate();
@@ -100,11 +101,12 @@ function Editor(props) {
     if(!readOnly) {
       setTipsModalShown(true)
       startGhostEffect()
-      // startPromptEffect()
+      startPromptEffect()
       startAutosave()
       startTimer()
     }
-    Transforms.select(editor, {path: [2, 0], offset: 0});
+    Transforms.select(editor, {path: [0, 0], offset: 0});
+    setTimeout(()=>{setPrompt('', 1)}, 5000)
   }
 
   // tears down the editor and write analytics before component unmounts
@@ -116,15 +118,16 @@ function Editor(props) {
     })
     // console.log("completed session? " + sessionComplete.current)
     // console.log("length of session " + Math.ceil((Date.now() - journalStartTime.current)/1000) + " seconds") 
-    console.log("removing interval " + ghostInterval.current)
+    // console.log("removing interval " + ghostInterval.current)
     console.log(clearInterval(ghostInterval.current))
     console.log(clearInterval(autosaveInterval.current))
+    console.log(clearInterval(promptInterval.current))
     console.log(clearTimeout(timer.current))
   }
 
   // starts a timer that ends when the specified duration of the session is up
   const startTimer = () => {
-    console.log('starting timer for ' + durationMins + ' minutes')
+    // console.log('starting timer for ' + durationMins + ' minutes')
     journalStartTime.current = Date.now()
     durationSeconds.current = durationMins*60
     timer.current = setTimeout(() => {
@@ -136,7 +139,7 @@ function Editor(props) {
   // starts the ghost effect wherein the top block of text disappears periodically
   const startGhostEffect = () => {
     setTipsModalShown(true)
-    console.log("setting interval")
+    // console.log("setting interval")
     var gInt = setInterval(() => {
       if(document.querySelector('.parent').childElementCount > 1 && !document.querySelector('.parent').firstChild.classList.contains('fade')) {
         
@@ -145,7 +148,7 @@ function Editor(props) {
 
         while(i < document.querySelector('.parent').childElementCount - 1) {
           var t = document.querySelector('.parent').children[i]
-          console.log('text: ' + t.innerText)
+          // console.log('text: ' + t.innerText)
           if(t.querySelector('[data-slate-length="0"]')){
             toRemove.push(t)
           } else {
@@ -161,36 +164,56 @@ function Editor(props) {
           })   
         })
       }
-    }, 10000)
-    console.log(gInt)
+    }, 5000)
+    // console.log(gInt)
     ghostInterval.current = gInt;
   }
 
-  // Prompts the user to keep writing if they have been idle for more than 10 seconds
-  // const startPromptEffect = () => {
-  //   lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
-  //   var pInt = setInterval(() => {
-  //     if(Math.floor(Date.now()/1000) - lastKeystrokeTimestamp.current > 10) {
-  //       console.log('five second rule!')
-  //       lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
-  //       setPromptText('Keep writing...')
-  //       document.querySelector('.promptText').style.opacity = 1; 
+  //Prompts the user to keep writing if they have been idle for more than 10 seconds
+  const startPromptEffect = () => {
+    lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
+    var pInt = setInterval(() => {
+      if(Math.floor(Date.now()/1000) - lastKeystrokeTimestamp.current > 15) {
+        lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
+        setPrompt('Keep writing...or press ctrl+i for help', 0, 5000)
+      }
+    }, 1000)
+    promptInterval.current = pInt
+  }
 
-  //       setTimeout(() => {
-  //         document.querySelector('.promptText').style.opacity = 0;
-  //       }, 5000)
-  //     }
-  //   }, 1000)
-  //   promptInterval.current = pInt
-  // }
+  const setPrompt = (prompt, force, duration) => { 
+        
+    const el = document.querySelector('.promptText')
+
+    if(el.innerText && !force) {
+      return;
+    }
+
+    el.style.opacity = 0;
+
+    waitForElementTransition(el).then(() => {
+      document.querySelector('.promptText').innerText = prompt;
+      document.querySelector('.promptText').style.opacity = 1;
+      
+      if(duration) {
+        setTimeout(() => {
+          if(document.querySelector('.promptText').innerText == prompt) {
+            setPrompt('', 1)
+          }
+        }, duration)
+      }
+    })
+
+    return
+  }
 
   // Starts autosaving what is typed every 5 seconds
   const startAutosave = () => {
-    console.log("starting autosave")
+    // console.log("starting autosave")
     var gInt = setInterval(() => {
       saveData()
     }, 5000)
-    console.log(gInt)
+    // console.log(gInt)
     autosaveInterval.current = gInt;
   }
   
@@ -246,7 +269,7 @@ function Editor(props) {
     return CryptoJS.TripleDES.decrypt(hash, key).toString(CryptoJS.enc.Utf8)
   }
 
-  const playSoundEffect = function(event) {    
+  const playSoundEffect = async (event) => {    
     if(event.metaKey && event.key == 's') {
       event.preventDefault();
       saveData().then(
@@ -264,8 +287,29 @@ function Editor(props) {
             </Box>
           )
         }));
-      return
+      return  
     } 
+
+    if(event.metaKey && event.key == 'i') {
+      event.preventDefault();
+
+      let GPTCompletionsInsertIndex = editorValue.current.length - 2
+
+      setPrompt('Thinking...', 1, 3000)
+
+      const {data, error} = await supabase.functions.invoke('prompt', {body: JSON.stringify({prompt: getPromptStateForGPT()})})
+  
+      // Record what GPT said up to this point in the conversation
+      GPTCompletions.current[GPTCompletionsInsertIndex] = data["data"]
+
+      console.log(JSON.stringify(GPTCompletions.current))
+      console.log(editorValue.current)
+
+
+      setPrompt(data["data"], 1, 10000)
+
+      return
+    }
 
     const noSoundList = ['Enter', 'Backspace', 'Esc', 'ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'Shift']
 
@@ -296,7 +340,7 @@ function Editor(props) {
           .update(updates)
           .eq('id', postId)
   
-        console.log('saved data: ' + JSON.stringify(data))
+        //console.log('saved data: ' + JSON.stringify(data))
   
         if(error) {
           throw error
@@ -306,6 +350,36 @@ function Editor(props) {
       }
     }
     return
+  }
+
+  const getPromptStateForGPT = () => {
+
+    let convo = editorValue.current
+    let messages = []
+    let prompt = ""
+
+    for (let i = 0; i < convo.length; i++) {
+      try {   
+        if (convo[i].children[0].text) {
+          prompt += convo[i].children[0].text
+          prompt += '\n'
+        }
+
+        if (GPTCompletions.current[i]) {
+          messages.push({"role":"user", "content": prompt})
+          messages.push({"role":"assistant", "content": GPTCompletions.current[i]})
+          prompt = ""
+        }
+
+      } catch (error) {
+        continue
+      }
+    }
+
+    messages.push({"role":"user", "content": prompt})
+    
+    console.log("GPT Prompt: " + JSON.stringify(messages))
+    return messages
   }
 
 
@@ -364,11 +438,13 @@ function Editor(props) {
                 exit={{opacity: 0, transition: {duration: 0.5}}}
               >
                 <Center>
-                  <Container maxW='md' h="1000px" marginTop="20vh"> 
-                    <Text className="promptText" textAlign='left' marginBottom="2vh">
-                      {promptText}
-                    </Text>
-                    <Slate height="1000px" width="50%" 
+                  <Container maxW='md' h="1000px" marginTop="10vh"> 
+                    <div class="promptTextContainer">
+                      <text class="promptText"> 
+                        Start writing...
+                      </text>
+                    </div>
+                    <Slate height="1000px" width="50%"
                       editor={editor} 
                       value={initValue}
                       onChange={(_value)=>{
