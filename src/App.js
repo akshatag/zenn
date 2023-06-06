@@ -3,6 +3,8 @@ import Editor from './Components/Editor';
 import Login from './Components/Login';
 import List from './Components/List';
 import About from './Components/About'
+import MobileRedirect from './Components/MobileRedirect'
+import { isMobile } from 'react-device-detect';
 import { supabase } from './supabaseClient';
 import {
   BrowserRouter as Router,
@@ -29,8 +31,23 @@ function App() {
     })
   }, [])
     
+  if(isMobile) {
+    return (
+      <ChakraProvider theme={theme}>
+          <Router>
+            <Routes>
+              <Route path="/mobile" element={<MobileRedirect/>}/>
+              <Route path="/about" element={<About/>}/>
+              <Route path="*" element={<Navigate to="/mobile"/>}/>
+            </Routes>
+          </Router>
+      </ChakraProvider>
+    )
+  }
+
   return (
     <ChakraProvider theme={theme}>
+
       {!session ? 
         <Router>
           <Routes>
