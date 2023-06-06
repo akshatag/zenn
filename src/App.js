@@ -53,6 +53,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login/>} ></Route>
             <Route path="/about" element={<About/>}/>
+            <Route path="/mobile" element={<Navigate to="/login"/>}/>
             <Route path="*" element={<Navigate to="/login"/>}/>
           </Routes>
         </Router>

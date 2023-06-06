@@ -298,15 +298,24 @@ function Editor(props) {
       setPrompt('Thinking...', 1, 3000)
 
       const {data, error} = await supabase.functions.invoke('prompt', {body: JSON.stringify({prompt: getPromptStateForGPT()})})
-  
+      let completion = ""
+      let displayTime = 10000
+
+      //data == null indicates error
+      if(data) {
+        completion = data["data"]
+      } else {
+        completion = "Seems like assist isn't available at the moment..."
+        displayTime = 3000
+      }
+
       // Record what GPT said up to this point in the conversation
-      GPTCompletions.current[GPTCompletionsInsertIndex] = data["data"]
+      GPTCompletions.current[GPTCompletionsInsertIndex] = completion
 
       console.log(JSON.stringify(GPTCompletions.current))
       console.log(editorValue.current)
 
-
-      setPrompt(data["data"], 1, 10000)
+      setPrompt(completion, 1, displayTime)
 
       return
     }
