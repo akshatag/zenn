@@ -17,6 +17,16 @@ Remember that the passwords for local and dev are different (local is just postg
 
 You can use `supabase db commit <name>` to create a new migration that captures the changes so that next time you use Supabase start it will spin up with the right schema. 
 
+## Edge Functions
+
+To spin up edge functions locally, use `supabase functions serve <FUNCTION_NAME> --env-file ./.env`. The last parameter points to the .env file in the supabase folder. This has all the API secrets for local functions to test. In prod, the function will use a different set of 
+
+
+## Managing Secrets
+
+https://supabase.com/docs/guides/functions/secrets
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

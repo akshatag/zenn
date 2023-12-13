@@ -138,7 +138,7 @@ function List() {
                   posts.length == 0 ? 
                   <Text as='i'>Journal is empty...</Text>
                   : 
-                  <Container style={{marginTop: '40px'}} width='800px'>
+                  <Container style={{marginTop: '40px', marginLeft: '100px'}} width='800px'>
                     {posts.map((value, index) => {
                       return (
                         <motion.div
@@ -146,9 +146,9 @@ function List() {
                           animate={{opacity: 1}}
                           transition={{delay: 0.20*index, duration: 0.5}}
                         >
-                          <HStack className='listEntry'>
-                            <Text style={{marginRight: '5px'}} align='right' width='308px'>{value.created_at.substring(0, 10)}</Text>
-                            <Text contentEditable onBlur={(e)=>renamePost(e, value.id, index)} style={{marginRight: '5px', maxWidth: '250px', whiteSpace: 'nowrap', overflow:'hidden'}} align='left'>{value.slug}</Text>
+                          <HStack className='listEntry' align='left'>
+                            <Text style={{marginLeft: '70px'}} align='right' width='100px'>{value.created_at.substring(0, 10)}</Text>
+                            <Text contentEditable onBlur={(e)=>renamePost(e, value.id, index)} style={{marginRight: '5px', maxWidth: '500px', whiteSpace: 'nowrap', overflow:'hidden'}} align='left'>{value.slug}</Text>
                             <Text className='listMenuItem' color='gray.500'><Link to={"/view/" + value.id}>open</Link></Text>
                             <Text className='listMenuItem' color='gray.500' onClick={() => deletePost(value.id, index)}>discard</Text>
                             {/* <div>
