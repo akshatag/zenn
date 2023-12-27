@@ -297,7 +297,7 @@ function Editor(props) {
 
       setPrompt('Thinking...', 1, 3000)
 
-      const {data, error} = await supabase.functions.invoke('prompt', {body: JSON.stringify({prompt: getPromptStateForGPT()})})
+      const {data, error} = await supabase.functions.invoke('chat', {body: JSON.stringify({chatHistory: getPromptStateForGPT()})})
       let completion = ""
       let displayTime = 10000
 
