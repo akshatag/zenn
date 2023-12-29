@@ -297,7 +297,17 @@ function Editor(props) {
 
       setPrompt('Thinking...', 1, 3000)
 
-      const {data, error} = await supabase.functions.invoke('chat', {body: JSON.stringify({chatHistory: getPromptStateForGPT()})})
+      // const {data, error} = await supabase.functions.invoke('chat', {body: JSON.stringify({chatHistory: getPromptStateForGPT()})})
+
+      const response = await fetch(process.env.REACT_APP_SUPABASE_FUNCTIONS_URL + 'chat', {
+        method: 'POST',
+        headers: { 
+          'Content-Type' : 'application/json',
+          'Authorization' : 'Bearer ' + process.env.REACT_APP_SUPABASE_ANON_KEY},
+        body: JSON.stringify({chatHistory: getPromptStateForGPT()}),
+      })
+      const data = await response.json()
+
       let completion = ""
       let displayTime = 10000
 
