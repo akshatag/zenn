@@ -1,6 +1,6 @@
 import { useNumberInput, Flex, Box, Icon, Image, VStack, Input, HStack, Text, Textarea, Button, Container, Center, useToast, Modal, ModalBody, ModalHeader, ModalFooter, ModalOverlay, ModalContent } from '@chakra-ui/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Howl, Howler } from 'howler';
 import { generateSlug, totalUniqueSlugs } from "random-word-slugs";
@@ -10,11 +10,9 @@ import { withHistory } from 'slate-history'
 import { supabase } from '../supabaseClient';
 import mixpanel from 'mixpanel-browser';
 import CryptoJS from 'crypto-js'; 
+import React from 'react';
 import waitForElementTransition from 'wait-for-element-transition';
 import './Editor.css';
-import { createClient } from '@supabase/supabase-js'
-
-
 
 function Editor(props) {
 
@@ -83,11 +81,15 @@ function Editor(props) {
 
   // useEffect is called ONCE when component mounts and the function it returns is called before component unloads  
   useEffect(() => {
+    
+    //log basic analytics to mixpanel
     mixpanel.init('62f060ede5004cdf8b70946f12ffb0a8', {debug: true}); 
     mixpanel.identify(supabase.auth.user().id)
     mixpanel.register({'env': process.env.REACT_APP_SUPABASE_ENV});
 
+    //fetch the content of the journal post
     fetchContent();
+
     if(readOnly) {
       startEditor()
     }
@@ -111,18 +113,19 @@ function Editor(props) {
 
   // tears down the editor and write analytics before component unmounts
   const teardownEditor = () => {
+    
+    //log session to mixpanel
     mixpanel.track('journal_session', {
       'completed?' : sessionComplete.current,
       'session_length_intended' : durationSeconds.current,
       'session_length_actual' : Math.ceil((Date.now() - journalStartTime.current)/1000)
     })
-    // console.log("completed session? " + sessionComplete.current)
-    // console.log("length of session " + Math.ceil((Date.now() - journalStartTime.current)/1000) + " seconds") 
-    // console.log("removing interval " + ghostInterval.current)
-    console.log(clearInterval(ghostInterval.current))
-    console.log(clearInterval(autosaveInterval.current))
-    console.log(clearInterval(promptInterval.current))
-    console.log(clearTimeout(timer.current))
+
+    //cleaer intervals and timeouts
+    console.debug(clearInterval(ghostInterval.current))
+    console.debug(clearInterval(autosaveInterval.current))
+    console.debug(clearInterval(promptInterval.current))
+    console.debug(clearTimeout(timer.current))
   }
 
   // starts a timer that ends when the specified duration of the session is up
@@ -139,7 +142,6 @@ function Editor(props) {
   // starts the ghost effect wherein the top block of text disappears periodically
   const startGhostEffect = () => {
     setTipsModalShown(true)
-    // console.log("setting interval")
     var gInt = setInterval(() => {
       if(document.querySelector('.parent').childElementCount > 1 && !document.querySelector('.parent').firstChild.classList.contains('fade')) {
         
@@ -169,11 +171,11 @@ function Editor(props) {
     ghostInterval.current = gInt;
   }
 
-  //Prompts the user to keep writing if they have been idle for more than 10 seconds
+  //Prompts the user to keep writing if they have been idle for more than 20 seconds
   const startPromptEffect = () => {
     lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
     var pInt = setInterval(() => {
-      if(Math.floor(Date.now()/1000) - lastKeystrokeTimestamp.current > 15) {
+      if(Math.floor(Date.now()/1000) - lastKeystrokeTimestamp.current > 20) {
         lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
         setPrompt('Keep writing...or press ctrl+i for help', 0, 5000)
       }
@@ -181,14 +183,25 @@ function Editor(props) {
     promptInterval.current = pInt
   }
 
-  const setPrompt = (prompt, force, duration) => { 
-        
+  /*
+  What we would like the setPrompt function to do is give us fine grained control over the text at the top of the page. The use cases are
+  0. Show priorty message that persists until setPrompt called again
+    a. Show that journal is thinking
+  1. Show priority message that persists until a certain key is pressed
+    a. Show message response 
+  2. Show best-effort message that disappears after a certain duration
+  */
+  const setPrompt = (prompt, priority, duration) => { 
+    
+    //first figure out current state of assistant text
     const el = document.querySelector('.promptText')
 
-    if(el.innerText && !force) {
+    //if there is assistant text and this is not a priority message, ignore
+    if(el.innerText.length != 0 && !priority) {
       return;
     }
 
+    //transition the assistant text out
     el.style.opacity = 0;
 
     waitForElementTransition(el).then(() => {
@@ -197,6 +210,7 @@ function Editor(props) {
       
       if(duration) {
         setTimeout(() => {
+          //clear prompt
           if(document.querySelector('.promptText').innerText == prompt) {
             setPrompt('', 1)
           }
@@ -295,11 +309,11 @@ function Editor(props) {
 
       let GPTCompletionsInsertIndex = editorValue.current.length - 2
 
-      setPrompt('Thinking...', 1, 3000)
+      setPrompt('Thinking...', 1)
 
       // const {data, error} = await supabase.functions.invoke('chat', {body: JSON.stringify({chatHistory: getPromptStateForGPT()})})
 
-      const response = await fetch(process.env.REACT_APP_SUPABASE_FUNCTIONS_URL + 'chat', {
+      const response = await fetch(process.env.REACT_APP_SUPABASE_FUNCTIONS_URL + 'assist', {
         method: 'POST',
         headers: { 
           'Content-Type' : 'application/json',
@@ -309,11 +323,11 @@ function Editor(props) {
       const data = await response.json()
 
       let completion = ""
-      let displayTime = 10000
+      let displayTime = 15000
 
       //data == null indicates error
       if(data) {
-        completion = data["data"]
+        completion = data["message"]
       } else {
         completion = "Seems like assist isn't available at the moment..."
         displayTime = 3000
@@ -322,8 +336,8 @@ function Editor(props) {
       // Record what GPT said up to this point in the conversation
       GPTCompletions.current[GPTCompletionsInsertIndex] = completion
 
-      console.log(JSON.stringify(GPTCompletions.current))
-      console.log(editorValue.current)
+      // console.log(JSON.stringify(GPTCompletions.current))
+      // console.log(editorValue.current)
 
       setPrompt(completion, 1, displayTime)
 

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { Spinner, Center, Container, Button, VStack, HStack, Flex, Text, Box, useToast } from '@chakra-ui/react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link} from "react-router-dom";
-import { Spinner, Center, Container, Button, VStack, HStack, Flex, Text, Box, useToast } from '@chakra-ui/react';
 import { DeleteIcon } from '@chakra-ui/icons';
 import { motion } from 'framer-motion';
+import React from 'react';
 import CryptoJS from 'crypto-js'; 
 import './List.css'
 
@@ -21,7 +22,6 @@ function List() {
 
   const checkForEncryptionKey = async () => {
     if(localStorage.getItem('ENC_KEY_' + supabase.auth.user().id )) {
-      console.log(localStorage.getItem('ENC_KEY_' + supabase.auth.user().id ))
       return
     } else {
       let salt = CryptoJS.lib.WordArray.random(128/8);
@@ -35,8 +35,6 @@ function List() {
 
   // Fetch the Posts that belong to the authed user
   const fetchPosts = async () => { 
-    console.log('fetching from db...')
-    console.log(supabase.auth.user().id)
 
     // RLS on the Posts table ensures only the authed user's data is returned
     try { 
@@ -70,7 +68,6 @@ function List() {
         throw error
       }
 
-      console.log(data)
       setPosts([...posts.slice(0, index), ...posts.slice(index+1)])
     } catch (error) {
       console.log(error.message)
@@ -79,7 +76,6 @@ function List() {
 
   const renamePost = async (event, id, index) => {
     if(posts[index].slug != event.target.textContent) {
-      // alert(event.target.textContent + ' and ' + id + ' and ' + index)
       try {
         let { data, error } = await supabase
           .from('posts')
