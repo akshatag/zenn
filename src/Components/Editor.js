@@ -400,7 +400,9 @@ function Editor(props) {
 
         if (GPTCompletions.current[i]) {
           messages.push({"role":"user", "content": prompt})
-          messages.push({"role":"assistant", "content": GPTCompletions.current[i]})
+
+          // Threads Beta doesn't support assistant messages yet
+          // messages.push({"role":"assistant", "content": GPTCompletions.current[i]})
           prompt = ""
         }
 
