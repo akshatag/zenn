@@ -4,6 +4,7 @@ import Login from './Components/Login';
 import List from './Components/List';
 import About from './Components/About'
 import MobileRedirect from './Components/MobileRedirect'
+import Settings from './Components/Settings'
 import { isMobile } from 'react-device-detect';
 import { supabase } from './supabaseClient';
 import {
@@ -54,6 +55,7 @@ function App() {
             <Route path="/login" element={<Login/>} ></Route>
             <Route path="/about" element={<About/>}/>
             <Route path="/mobile" element={<Navigate to="/login"/>}/>
+            <Route path="/settings" element={<Settings/>}/>
             <Route path="*" element={<Navigate to="/login"/>}/>
           </Routes>
         </Router>
@@ -65,6 +67,7 @@ function App() {
               <Route path="/editor" element={<Editor/>}/>
               <Route path="/edit/:postId" element={<Editor/>}/>
               <Route path="/view/:postId" element={<Editor readOnly/>}/>
+              <Route path="/settings" element={<Settings/>}/>
               <Route path="*" element={<Navigate to="/posts"/>}/>
             </Routes>
           </Router>

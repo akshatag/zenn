@@ -142,6 +142,7 @@ function Editor(props) {
   // starts the ghost effect wherein the top block of text disappears periodically
   const startGhostEffect = () => {
     setTipsModalShown(true)
+    const gLen = parseInt(localStorage.getItem('GHOST_LENGTH_MS')) || 5000
     var gInt = setInterval(() => {
       if(document.querySelector('.parent').childElementCount > 1 && !document.querySelector('.parent').firstChild.classList.contains('fade')) {
         
@@ -166,7 +167,7 @@ function Editor(props) {
           })   
         })
       }
-    }, 5000)
+    }, gLen)
     // console.log(gInt)
     ghostInterval.current = gInt;
   }

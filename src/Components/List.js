@@ -158,6 +158,9 @@ function List() {
                 }
               </VStack>
             </Center>
+            <Link to="/settings">
+              <Button style={{position: 'fixed', bottom: '2vh', left: '2vh'}} variant='ghost'>settings</Button>
+            </Link>
             <Button style={{position: 'fixed', bottom: '2vh', right: '2vh'}} variant='ghost' onClick={signOut}>close journal</Button>
           </Container>
         )
