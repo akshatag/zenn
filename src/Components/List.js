@@ -1,11 +1,8 @@
 import { Spinner, Center, Container, Button, VStack, HStack, Flex, Text, Box, useToast } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
 import { Link} from "react-router-dom";
-import { DeleteIcon } from '@chakra-ui/icons';
 import { motion } from 'framer-motion';
 import React from 'react';
-import CryptoJS from 'crypto-js'; 
 import './List.css'
 
 function List() {
@@ -21,91 +18,41 @@ function List() {
   }, [])
 
   const checkForEncryptionKey = async () => {
-    if(localStorage.getItem('ENC_KEY_' + supabase.auth.user().id )) {
-      return
-    } else {
-      let salt = CryptoJS.lib.WordArray.random(128/8);
-      let pass = CryptoJS.lib.WordArray.random(512/8)
-      let key = CryptoJS.PBKDF2(pass, salt, { keySize: 512/32, iterations: 1000})
-
-      localStorage.setItem('ENC_KEY_' + supabase.auth.user().id, key)
-      return
-    }
+    return
   }
 
   // Fetch the Posts that belong to the authed user
   const fetchPosts = async () => { 
-
-    // RLS on the Posts table ensures only the authed user's data is returned
-    try { 
-      let { data, error, status } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if(error) {
-        throw error
-      }      
-      setPosts(data)
-      setLoading(false)
-    } catch (error) {
-      console.log(error.message)
-    } 
+    setPosts([])
+    setLoading(false)
   }  
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    return
   }
 
   const deletePost = async (id, index) => {
-    try {
-      let { data, error } = await supabase
-        .from('posts')
-        .delete()
-        .eq('id', id)
-
-      if(error) {
-        throw error
-      }
-
-      setPosts([...posts.slice(0, index), ...posts.slice(index+1)])
-    } catch (error) {
-      console.log(error.message)
-    }
+    setPosts([...posts.slice(0, index), ...posts.slice(index+1)])
   }
 
   const renamePost = async (event, id, index) => {
     if(posts[index].slug != event.target.textContent) {
-      try {
-        let { data, error } = await supabase
-          .from('posts')
-          .update({slug: event.target.textContent})
-          .eq('id', id)
-  
-        if(error) {
-          throw error
-        }
-
-        posts[index].slug = event.target.textContent;
-        setPosts(posts)
-        nameUpdatedToast({
-          position: 'top-right',
-          description: "Name updated",
-          status: 'success',
-          duration: 1000,
-          isClosable: false,
-          render: () => (
-            <Box bg='white' alignContent='center' marginRight='30px' marginTop='20px'>
-              <Flex direction='row'>
-                <Text flex={1} align='right' color='gray.600'>Journal entry updated</Text>
-              </Flex>
-            </Box>
-          )
-        })
-
-      } catch (error) {
-        console.log(error.message)
-      }
+      posts[index].slug = event.target.textContent;
+      setPosts([...posts])
+      nameUpdatedToast({
+        position: 'top-right',
+        description: "Name updated",
+        status: 'success',
+        duration: 1000,
+        isClosable: false,
+        render: () => (
+          <Box bg='white' alignContent='center' marginRight='30px' marginTop='20px'>
+            <Flex direction='row'>
+              <Text flex={1} align='right' color='gray.600'>Journal entry updated</Text>
+            </Flex>
+          </Box>
+        )
+      })
     } 
   }
 

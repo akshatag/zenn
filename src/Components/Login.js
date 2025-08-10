@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Image, Input, Spinner, Center, Container, Button, VStack, Text, Spacer } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
 import { motion } from "framer-motion";
 import Lotus from './Lotus.js';
 
@@ -16,13 +15,6 @@ function Login() {
     console.log(email)
     try {
       setLoading(true)
-      const { error } = await supabase.auth.signIn({ email })
-
-      if(error) {
-        throw error;
-      }
-    } catch(error) {
-      alert(error.message)
     } finally {
       setSent(true)
       setLoading(false);

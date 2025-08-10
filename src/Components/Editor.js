@@ -3,11 +3,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Howl, Howler } from 'howler';
-import { generateSlug, totalUniqueSlugs } from "random-word-slugs";
 import { Transforms, createEditor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history'
-import { supabase } from '../supabaseClient';
 import mixpanel from 'mixpanel-browser';
 import CryptoJS from 'crypto-js'; 
 import React from 'react';
@@ -83,9 +81,9 @@ function Editor(props) {
   useEffect(() => {
     
     //log basic analytics to mixpanel
-    mixpanel.init('62f060ede5004cdf8b70946f12ffb0a8', {debug: true}); 
-    mixpanel.identify(supabase.auth.user().id)
-    mixpanel.register({'env': process.env.REACT_APP_SUPABASE_ENV});
+    try { 
+      mixpanel.init('62f060ede5004cdf8b70946f12ffb0a8', {debug: true}); 
+    } catch(e) {}
 
     //fetch the content of the journal post
     fetchContent();
@@ -234,53 +232,16 @@ function Editor(props) {
   
   // Either fetches the content of the post (view mode) or creates a new post in the database (edit mode)
   const fetchContent = async () => { 
-    if(postId) {
-      console.log('fetching from db...')
-    
-      let { data, error, status } = await supabase
-        .from('posts')
-        .select(`content`)
-        .eq('id', postId)
-        .single()
-      
-      if(data.content) {
-        let decryptedContent = await decryptString(data.content)
-        setInitValue(JSON.parse(decryptedContent))
-        setLoading(false) 
-      }
-    } else {
-      console.log('inserting new post')
-      let slug = generateSlug(2, {format: 'kebab', partsOfSpeech: ['noun', 'noun']})
-      let encryptedContent = await encryptString(JSON.stringify(editorValue.current));
-
-      let { data, error, status } = await supabase
-        .from('posts')
-        .insert({  
-          slug: slug,
-          belongs_to: supabase.auth.user().id,
-          content: encryptedContent,
-          duration: durationMins,
-          finished: false
-        })
-    
-      if(error) {
-        throw error
-      }
-
-      console.log('new post id ' + data[0].id)
-      setPostId(data[0].id)
-      setLoading(false)
-    }
-
+    setLoading(false)
   }  
 
   const encryptString = async (str) => {
-    let key = localStorage.getItem('ENC_KEY_' + supabase.auth.user().id)
+    let key = ''
     return CryptoJS.TripleDES.encrypt(str, key).toString()
   }
 
   const decryptString = async (hash) => {
-    let key = localStorage.getItem('ENC_KEY_' + supabase.auth.user().id)
+    let key = ''
     return CryptoJS.TripleDES.decrypt(hash, key).toString(CryptoJS.enc.Utf8)
   }
 
@@ -307,41 +268,7 @@ function Editor(props) {
 
     if(event.metaKey && event.key == 'i') {
       event.preventDefault();
-
-      let GPTCompletionsInsertIndex = editorValue.current.length - 2
-
-      setPrompt('Thinking...', 1)
-
-      // const {data, error} = await supabase.functions.invoke('chat', {body: JSON.stringify({chatHistory: getPromptStateForGPT()})})
-
-      const response = await fetch(process.env.REACT_APP_SUPABASE_FUNCTIONS_URL + 'assist', {
-        method: 'POST',
-        headers: { 
-          'Content-Type' : 'application/json',
-          'Authorization' : 'Bearer ' + process.env.REACT_APP_SUPABASE_ANON_KEY},
-        body: JSON.stringify({chatHistory: getPromptStateForGPT()}),
-      })
-      const data = await response.json()
-
-      let completion = ""
-      let displayTime = 15000
-
-      //data == null indicates error
-      if(data) {
-        completion = data["message"]
-      } else {
-        completion = "Seems like assist isn't available at the moment..."
-        displayTime = 3000
-      }
-
-      // Record what GPT said up to this point in the conversation
-      GPTCompletions.current[GPTCompletionsInsertIndex] = completion
-
-      // console.log(JSON.stringify(GPTCompletions.current))
-      // console.log(editorValue.current)
-
-      setPrompt(completion, 1, displayTime)
-
+      setPrompt("Assist isn't available in offline mode right now.", 1, 3000)
       return
     }
 
@@ -358,31 +285,6 @@ function Editor(props) {
   }
 
   const saveData = async function() {
-    // console.log('post id ' + postId)
-    // console.log('editor value: ' + JSON.stringify(editorValue.current))
-
-    let encryptedContent = await encryptString(JSON.stringify(editorValue.current))
-
-    if(postId) {
-      try {
-        const updates = {
-          content: encryptedContent
-        }
-  
-        let { data, error } = await supabase
-          .from('posts')
-          .update(updates)
-          .eq('id', postId)
-  
-        //console.log('saved data: ' + JSON.stringify(data))
-  
-        if(error) {
-          throw error
-        }
-      } catch(error) {
-        console.log(error)
-      }
-    }
     return
   }
 
@@ -508,7 +410,7 @@ function Editor(props) {
                 initial={{opacity: 0}}
                 animate={{opacity: 1, transition: {duration: 0.5, delay: 0}}} 
               >
-                <Modal isOpen={true} onClose={()=>navigate('/posts')}>
+                <Modal isOpen={true} onClose={()=>navigate('/')}>
                   <ModalOverlay />
                   <ModalContent>
                   <ModalHeader>Modal Title</ModalHeader>
@@ -518,7 +420,7 @@ function Editor(props) {
                     </p>
                   </ModalBody>
                   <ModalFooter>
-                    <Button colorScheme='blue' mr={3} onClick={()=>navigate('/posts')}>
+                    <Button colorScheme='blue' mr={3} onClick={()=>navigate('/')}>
                       Close
                     </Button>
                   </ModalFooter>
