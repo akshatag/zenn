@@ -116,8 +116,16 @@ function Editor(props) {
         return;
       }
 
-      // Hide the real cursor completely
+      // Hide the real cursor completely - be very aggressive about this
       editableElement.style.caretColor = 'transparent';
+      editableElement.style.setProperty('caret-color', 'transparent', 'important');
+      
+      // Also hide any child element cursors
+      const allEditableChildren = editableElement.querySelectorAll('*');
+      allEditableChildren.forEach(child => {
+        child.style.caretColor = 'transparent';
+        child.style.setProperty('caret-color', 'transparent', 'important');
+      });
 
       // Create custom cursor element
       const customCursor = document.createElement('div');
@@ -319,6 +327,22 @@ function Editor(props) {
       const ghostObserver = observeGhostEffect();
       listenForPhaseOutEnd();
       
+      // Periodic check to ensure no default cursors show up
+      const ensureNoCursors = () => {
+        const allContentEditable = document.querySelectorAll('[contenteditable="true"], [data-slate-editor="true"]');
+        allContentEditable.forEach(element => {
+          element.style.setProperty('caret-color', 'transparent', 'important');
+          const children = element.querySelectorAll('*');
+          children.forEach(child => {
+            child.style.setProperty('caret-color', 'transparent', 'important');
+          });
+        });
+      };
+      
+      // Run cursor suppression immediately and periodically
+      ensureNoCursors();
+      const cursorSuppressionInterval = setInterval(ensureNoCursors, 1000);
+
       // Initial position and heartbeat
       setTimeout(() => {
         updateCursorPosition(true); // Force initial position
@@ -335,6 +359,7 @@ function Editor(props) {
         if (ghostObserver) {
           ghostObserver.disconnect();
         }
+        clearInterval(cursorSuppressionInterval);
         heartbeatTimeouts.forEach(timeout => clearTimeout(timeout));
         clearTimeout(typingTimeout);
         if (customCursor && customCursor.parentNode) {
@@ -628,7 +653,7 @@ function Editor(props) {
                 exit={{opacity: 0, transition: {duration: 0.5}}}
               >
                 <Center>
-                  <Container maxW='md' h="1000px" marginTop="10vh"> 
+                  <Container maxW='md' h="1000px" marginTop="10vh" className="editor-container"> 
                     <div class="promptTextContainer">
                       <text class="promptText"> 
                         Start writing...

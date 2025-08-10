@@ -12,6 +12,19 @@
   outline: none;
 }
 
+.parent [contenteditable] * {
+  caret-color: transparent !important;
+}
+
+/* Hide any other potential cursors in Slate.js */
+[data-slate-editor="true"] {
+  caret-color: transparent !important;
+}
+
+[data-slate-editor="true"] * {
+  caret-color: transparent !important;
+}
+
 .custom-cursor {
   position: absolute;
   width: 1px;
@@ -24,6 +37,17 @@
 
 .parent > div {
   max-height: 100px;
+}
+
+/* Mobile responsive styling */
+@media (max-width: 768px) {
+  .editor-container {
+    width: 80% !important;
+    max-width: 80% !important;
+    margin: 0 auto !important;
+    padding-left: 10% !important;
+    padding-right: 10% !important;
+  }
 }
 
 .promptTextContainer { 

@@ -17,19 +17,20 @@ import './App.css'
  
 
 function App() {
-  if(isMobile) {
-    return (
-      <ChakraProvider theme={theme}>
-          <Router>
-            <Routes>
-              <Route path="/mobile" element={<MobileRedirect/>}/>
-              <Route path="/about" element={<About/>}/>
-              <Route path="*" element={<Navigate to="/mobile"/>}/>
-            </Routes>
-          </Router>
-      </ChakraProvider>
-    )
-  }
+  // Commented out mobile redirect to test on mobile
+  // if(isMobile) {
+  //   return (
+  //     <ChakraProvider theme={theme}>
+  //         <Router>
+  //           <Routes>
+  //             <Route path="/mobile" element={<MobileRedirect/>}/>
+  //             <Route path="/about" element={<About/>}/>
+  //             <Route path="*" element={<Navigate to="/mobile"/>}/>
+  //           </Routes>
+  //         </Router>
+  //     </ChakraProvider>
+  //   )
+  // }
 
   return (
     <ChakraProvider theme={theme}>
@@ -38,6 +39,7 @@ function App() {
           <Route path="/" element={<Home/>} />
           <Route path="/about" element={<About/>}/>
           <Route path="/editor" element={<Editor/>}/>
+          <Route path="/mobile" element={<MobileRedirect/>}/>
           <Route path="*" element={<Navigate to="/"/>}/>
         </Routes>
       </Router>
