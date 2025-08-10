@@ -1,14 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+Antique&display=swap');
-
 .editable{
-  /* font-family:'Times New Roman', Times, serif; */
-  font-family: 'Inter', sans-serif;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 .parent {
-  /* font-family: 'Source Code Pro', monospace;   */
-  font-family: 'Zen Kaku Gothic Antique', sans-serif;
-  caret-color: black;
+  font-family: 'Times New Roman', Times, serif;
+  color: #333;
+}
+
+.parent [contenteditable] {
+  caret-color: transparent !important;
+  outline: none;
+}
+
+.custom-cursor {
+  position: absolute;
+  width: 1px;
+  height: 1.2em;
+  background-color: rgba(51, 51, 51, 0);
+  pointer-events: none;
+  z-index: 1000;
+  transition: none;
 }
 
 .parent > div {
@@ -30,6 +41,7 @@
   color: gray;
   transition: opacity 0.5s ease;
   font-style: italic;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 

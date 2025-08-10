@@ -95,6 +95,258 @@ function Editor(props) {
     return () => teardownEditor()
   }, [])
 
+  // Set serif font and softer text color globally on component mount
+  useEffect(() => {
+    document.body.style.fontFamily = "'Times New Roman', Times, serif";
+    document.body.style.color = "#333";
+  }, [])
+
+  // Create custom heartbeat cursor
+  useEffect(() => {
+    const createCustomCursor = () => {
+      // Try multiple selectors to find the Slate editable element
+      const editableElement = document.querySelector('[data-slate-editor="true"]') || 
+                             document.querySelector('.parent [contenteditable]') ||
+                             document.querySelector('[contenteditable="true"]');
+                             
+      console.log('Found editable element:', editableElement);
+      if (!editableElement) {
+        console.log('No editable element found, trying again in 1 second');
+        setTimeout(createCustomCursor, 1000);
+        return;
+      }
+
+      // Hide the real cursor completely
+      editableElement.style.caretColor = 'transparent';
+
+      // Create custom cursor element
+      const customCursor = document.createElement('div');
+      customCursor.className = 'custom-cursor';
+      document.body.appendChild(customCursor);
+
+      let isTyping = false;
+      let typingTimeout;
+      let heartbeatTimeouts = [];
+      
+      // Function to update cursor position (only when invisible to avoid jumps)
+      const updateCursorPosition = (force = false) => {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          
+          // Check if cursor is currently visible
+          const currentOpacity = parseFloat(customCursor.style.backgroundColor.match(/rgba\(\d+,\s*\d+,\s*\d+,\s*([\d.]+)\)/)?.[1] || '0');
+          
+          if (force || currentOpacity === 0 || !customCursor.style.backgroundColor) {
+            // Only move when invisible or forced
+            if (rect.height === 0) {
+              // Cursor at end of line, use line height
+              customCursor.style.left = `${rect.left + 1}px`;
+              customCursor.style.top = `${rect.top}px`;
+              customCursor.style.height = '1.2em';
+            } else {
+              customCursor.style.left = `${rect.left + 1}px`;
+              customCursor.style.top = `${rect.top}px`;
+              customCursor.style.height = `${rect.height}px`;
+            }
+            console.log('Cursor position updated (invisible or forced)');
+          } else {
+            console.log('Cursor position update skipped (cursor is visible)');
+          }
+        }
+      };
+
+      const startHeartbeat = () => {
+        if (isTyping) return;
+        
+        console.log('Starting heartbeat');
+        heartbeatTimeouts.forEach(timeout => clearTimeout(timeout));
+        heartbeatTimeouts = [];
+        
+        // Smooth fade in and out
+        const fadeIn = () => {
+          let opacity = 0;
+          const fadeStep = () => {
+            if (isTyping) return;
+            opacity += 0.045; // Slightly faster fade in
+            customCursor.style.backgroundColor = `rgba(51, 51, 51, ${Math.min(opacity, 1)})`;
+            if (opacity < 1) {
+              heartbeatTimeouts.push(setTimeout(fadeStep, 36)); // ~10% faster
+            } else {
+              // Start fade out after brief pause
+              heartbeatTimeouts.push(setTimeout(fadeOut, 100));
+            }
+          };
+          fadeStep();
+        };
+        
+        const fadeOut = () => {
+          let opacity = 1;
+          const fadeStep = () => {
+            if (isTyping) return;
+            opacity -= 0.055; // Slightly faster fade out
+            customCursor.style.backgroundColor = `rgba(51, 51, 51, ${Math.max(opacity, 0)})`;
+            if (opacity > 0) {
+              heartbeatTimeouts.push(setTimeout(fadeStep, 36)); // ~10% faster
+            } else {
+              // Wait before next heartbeat
+              heartbeatTimeouts.push(setTimeout(startHeartbeat, 2000));
+            }
+          };
+          fadeStep();
+        };
+        
+        fadeIn();
+      };
+      
+      const onKeyDown = () => {
+        console.log('Key pressed, stopping heartbeat');
+        isTyping = true;
+        customCursor.style.backgroundColor = 'rgba(51, 51, 51, 1)';
+        clearTimeout(typingTimeout);
+        heartbeatTimeouts.forEach(timeout => clearTimeout(timeout));
+        heartbeatTimeouts = [];
+        
+        typingTimeout = setTimeout(() => {
+          console.log('Stopped typing, cursor stays at 100% for 0.2s then starts heartbeat');
+          isTyping = false;
+          // Cursor is already at 100% opacity, so just wait 0.2s then start fade out
+          heartbeatTimeouts.push(setTimeout(() => {
+            const fadeOut = () => {
+              let opacity = 1;
+              const fadeStep = () => {
+                if (isTyping) return;
+                opacity -= 0.055; // Slightly faster fade out
+                customCursor.style.backgroundColor = `rgba(51, 51, 51, ${Math.max(opacity, 0)})`;
+                if (opacity > 0) {
+                  heartbeatTimeouts.push(setTimeout(fadeStep, 36)); // ~10% faster
+                } else {
+                  // Wait before next heartbeat
+                  heartbeatTimeouts.push(setTimeout(startHeartbeat, 2000));
+                }
+              };
+              fadeStep();
+            };
+            fadeOut();
+          }, 200)); // Wait 0.2s at 100% opacity before starting fade out
+        }, 800); // Fade out earlier after stopping typing
+      };
+      
+      const onInput = () => {
+        updateCursorPosition(true); // Force update on input
+      };
+      
+      const onSelectionChange = () => {
+        updateCursorPosition(true); // Force update on selection change
+      };
+
+      // Function to smoothly reposition cursor when ghost effect happens
+      const handleGhostEffectChange = () => {
+        if (isTyping) return; // Don't interfere if user is typing
+        
+        console.log('Ghost effect detected, smoothly repositioning cursor');
+        
+        // Clear any existing heartbeat
+        heartbeatTimeouts.forEach(timeout => clearTimeout(timeout));
+        heartbeatTimeouts = [];
+        
+        // Fade out cursor if visible
+        const currentOpacity = parseFloat(customCursor.style.backgroundColor.match(/rgba\(\d+,\s*\d+,\s*\d+,\s*([\d.]+)\)/)?.[1] || '0');
+        
+        if (currentOpacity > 0) {
+          // Quickly fade out
+          let opacity = currentOpacity;
+          const quickFadeOut = () => {
+            opacity -= 0.1;
+            customCursor.style.backgroundColor = `rgba(51, 51, 51, ${Math.max(opacity, 0)})`;
+            if (opacity > 0) {
+              heartbeatTimeouts.push(setTimeout(quickFadeOut, 18)); // ~10% faster
+            } else {
+              // Now cursor is invisible, update position and restart heartbeat
+              setTimeout(() => {
+                updateCursorPosition(false); // Don't force, cursor should be invisible now
+                setTimeout(startHeartbeat, 500); // Brief pause before new heartbeat
+              }, 100);
+            }
+          };
+          quickFadeOut();
+        } else {
+          // Already invisible, just update position and restart heartbeat
+          setTimeout(() => {
+            updateCursorPosition(false);
+            setTimeout(startHeartbeat, 500);
+          }, 100);
+        }
+      };
+
+      // Listen for ghost effect DOM changes
+      const observeGhostEffect = () => {
+        const parentElement = document.querySelector('.parent');
+        if (parentElement) {
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+                handleGhostEffectChange();
+              }
+            });
+          });
+          
+          observer.observe(parentElement, {
+            childList: true,
+            subtree: true
+          });
+          
+          return observer;
+        }
+        return null;
+      };
+
+      // Also listen for the phaseOut animation end events
+      const listenForPhaseOutEnd = () => {
+        document.addEventListener('animationend', (e) => {
+          if (e.target.classList.contains('phaseOut')) {
+            handleGhostEffectChange();
+          }
+        });
+      };
+      
+      editableElement.addEventListener('keydown', onKeyDown);
+      editableElement.addEventListener('input', onInput);
+      editableElement.addEventListener('click', () => updateCursorPosition(true));
+      document.addEventListener('selectionchange', onSelectionChange);
+      
+      const ghostObserver = observeGhostEffect();
+      listenForPhaseOutEnd();
+      
+      // Initial position and heartbeat
+      setTimeout(() => {
+        updateCursorPosition(true); // Force initial position
+        startHeartbeat();
+      }, 100);
+      
+      return () => {
+        if (editableElement) {
+          editableElement.removeEventListener('keydown', onKeyDown);
+          editableElement.removeEventListener('input', onInput);
+          editableElement.removeEventListener('click', updateCursorPosition);
+        }
+        document.removeEventListener('selectionchange', onSelectionChange);
+        if (ghostObserver) {
+          ghostObserver.disconnect();
+        }
+        heartbeatTimeouts.forEach(timeout => clearTimeout(timeout));
+        clearTimeout(typingTimeout);
+        if (customCursor && customCursor.parentNode) {
+          customCursor.parentNode.removeChild(customCursor);
+        }
+      };
+    };
+    
+    const cleanup = createCustomCursor();
+    return cleanup;
+  }, [tipsModalShown])
+
 
   // starts the editor and all the various effects
   const startEditor = () => { 
