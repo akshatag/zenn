@@ -52,19 +52,19 @@
   /* Make editor area more tappable on mobile */
   .parent {
     min-height: 60vh !important;
-    padding: 20px !important;
+    padding: 0px !important;
     cursor: text !important;
   }
 
   /* Larger tap target for mobile */
   .parent [contenteditable] {
     min-height: 50vh !important;
-    padding: 10px !important;
+    padding: 0px !important;
   }
 }
 
 .promptTextContainer { 
-  height: 150px; 
+  height: 100px; 
   max-height: 150px;
   width: 100%;
   display: flex;
