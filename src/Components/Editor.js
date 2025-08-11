@@ -1,4 +1,4 @@
-import { useNumberInput, Flex, Box, Icon, Image, VStack, Input, HStack, Text, Textarea, Button, Container, Center, useToast, Modal, ModalBody, ModalHeader, ModalFooter, ModalOverlay, ModalContent } from '@chakra-ui/react';
+import { Flex, Box, Image, VStack, Text, Button, Container, Center, useToast } from '@chakra-ui/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -18,13 +18,10 @@ function Editor(props) {
   const readOnly = props.readOnly;
 
   // State for USER SETTINGS for the journal session
-  const [durationMins, setDurationMins] = useState(5)
 
-  // State that controls lifecycle of the editor - setup, tips, editing, timeup, etc.
+  // State that controls lifecycle of the editor - tips, editing, etc.
   const [loading, setLoading] = useState(true) 
-  const [setupModalShown, setSetupModalShown] = useState(readOnly)
   const [tipsModalShown, setTipsModalShown] = useState(readOnly)
-  const [timeUp, setTimeUp] = useState(false)
 
   // State about the editor 
   const [postId, setPostId] = useState(useParams().postId)
@@ -42,8 +39,6 @@ function Editor(props) {
   const promptInterval = useRef();
   const autosaveInterval = useRef();
   const lastKeystrokeTimestamp = useRef();
-  const timer = useRef();
-  const durationSeconds = useRef();
   const journalStartTime = useRef();
   const sessionComplete = useRef(false);
   const GPTCompletions = useRef({})
@@ -52,19 +47,6 @@ function Editor(props) {
   const navigate = useNavigate();
   const postSavedToast = useToast();
 
-  // State related to the increment/decrement UI to set the duration setting
-  const { getInputProps, getIncrementButtonProps, getDecrementButtonProps } =
-  useNumberInput({
-    step: 1,
-    defaultValue: 5,
-    min: 1,
-    max: 60,
-    precision: 0,
-    onChange: (valueString) => setDurationMins(parseInt(valueString))
-  })
-  const durationInc = getIncrementButtonProps()
-  const durationDec = getDecrementButtonProps()
-  const durationInput = getInputProps()
 
   // Set up the typing sound effect
   const sound = new Howl({
@@ -90,6 +72,9 @@ function Editor(props) {
 
     if(readOnly) {
       startEditor()
+    } else {
+      // For new sessions, skip onboarding and go straight to tips
+      setTipsModalShown(false)
     }
 
     return () => teardownEditor()
@@ -397,7 +382,6 @@ function Editor(props) {
       startGhostEffect()
       startPromptEffect()
       startAutosave()
-      startTimer()
     }
     Transforms.select(editor, {path: [0, 0], offset: 0});
     setTimeout(()=>{setPrompt('', 1)}, 5000)
@@ -409,7 +393,6 @@ function Editor(props) {
     //log session to mixpanel
     mixpanel.track('journal_session', {
       'completed?' : sessionComplete.current,
-      'session_length_intended' : durationSeconds.current,
       'session_length_actual' : Math.ceil((Date.now() - journalStartTime.current)/1000)
     })
 
@@ -417,19 +400,8 @@ function Editor(props) {
     console.debug(clearInterval(ghostInterval.current))
     console.debug(clearInterval(autosaveInterval.current))
     console.debug(clearInterval(promptInterval.current))
-    console.debug(clearTimeout(timer.current))
   }
 
-  // starts a timer that ends when the specified duration of the session is up
-  const startTimer = () => {
-    // console.log('starting timer for ' + durationMins + ' minutes')
-    journalStartTime.current = Date.now()
-    durationSeconds.current = durationMins*60
-    timer.current = setTimeout(() => {
-      sessionComplete.current = true;
-      setTimeUp(true)
-    }, durationMins*60000) 
-  }
 
   // starts the ghost effect wherein the top block of text disappears periodically
   const startGhostEffect = () => {
@@ -625,31 +597,7 @@ function Editor(props) {
   return (
         <>
           <AnimatePresence>
-            {!setupModalShown && (
-              <motion.div 
-                key="setup"
-                initial={{opacity: 0}}
-                animate={{opacity: 1, transition: {duration: 0.5, delay: 1}}} 
-                exit={{opacity: 0, transition: {duration: 0.5}}}
-              >
-                <Center marginTop='25vh'>  
-                  <VStack w='sm' spacing={8}>
-                    <Image boxSize='100px' src='./hourglass.svg'/>
-                    <Text>
-                      how many minutes do you want to write for? 
-                    </Text>
-                    <HStack maxW='200px'>
-                      <Button variant="ghost" {...durationDec}>-</Button>
-                      <Input readOnly variant="flushed" {...durationInput} style={{textAlign: "center"}} value={durationMins}/>
-                      <Button variant="ghost" {...durationInc}>+</Button>
-                    </HStack>
-                    <Button variant="ghost" onClick={() => setSetupModalShown(true)}>continue</Button>
-                  </VStack>
-                </Center>
-              </motion.div>
-            )}
-
-            {setupModalShown && !tipsModalShown && (
+            {!tipsModalShown && (
               <motion.div 
                 key="tips"
                 initial={{opacity: 0}}
@@ -705,31 +653,6 @@ function Editor(props) {
               </motion.div>
             )}
 
-            {timeUp && (
-              <motion.div
-                key="timesUp"
-                initial={{opacity: 0}}
-                animate={{opacity: 1, transition: {duration: 0.5, delay: 0}}} 
-              >
-                <Modal isOpen={true} onClose={()=>navigate('/')}>
-                  <ModalOverlay />
-                  <ModalContent>
-                  <ModalHeader>Modal Title</ModalHeader>
-                  <ModalBody>
-                    <p>
-                      Time's up!
-                    </p>
-                  </ModalBody>
-                  <ModalFooter>
-                    <Button colorScheme='blue' mr={3} onClick={()=>navigate('/')}>
-                      Close
-                    </Button>
-                  </ModalFooter>
-                  </ModalContent>
-                </Modal>
-              </motion.div>
-
-            )}
           </AnimatePresence>
         </>
       );
