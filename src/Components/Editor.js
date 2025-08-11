@@ -319,9 +319,23 @@ function Editor(props) {
         });
       };
       
+      // Mobile touch handlers to ensure editor remains focusable
+      const onTouch = (e) => {
+        console.log('Touch detected, focusing editor');
+        editableElement.focus();
+        updateCursorPosition(true);
+      };
+
+      const onFocusLost = () => {
+        console.log('Focus lost - editor may need manual refocus on mobile');
+      };
+
       editableElement.addEventListener('keydown', onKeyDown);
       editableElement.addEventListener('input', onInput);
       editableElement.addEventListener('click', () => updateCursorPosition(true));
+      editableElement.addEventListener('touchstart', onTouch);
+      editableElement.addEventListener('touchend', onTouch);
+      editableElement.addEventListener('blur', onFocusLost);
       document.addEventListener('selectionchange', onSelectionChange);
       
       const ghostObserver = observeGhostEffect();
@@ -354,6 +368,9 @@ function Editor(props) {
           editableElement.removeEventListener('keydown', onKeyDown);
           editableElement.removeEventListener('input', onInput);
           editableElement.removeEventListener('click', updateCursorPosition);
+          editableElement.removeEventListener('touchstart', onTouch);
+          editableElement.removeEventListener('touchend', onTouch);
+          editableElement.removeEventListener('blur', onFocusLost);
         }
         document.removeEventListener('selectionchange', onSelectionChange);
         if (ghostObserver) {

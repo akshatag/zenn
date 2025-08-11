@@ -48,6 +48,19 @@
     padding-left: 10% !important;
     padding-right: 10% !important;
   }
+
+  /* Make editor area more tappable on mobile */
+  .parent {
+    min-height: 60vh !important;
+    padding: 20px !important;
+    cursor: text !important;
+  }
+
+  /* Larger tap target for mobile */
+  .parent [contenteditable] {
+    min-height: 50vh !important;
+    padding: 10px !important;
+  }
 }
 
 .promptTextContainer { 
