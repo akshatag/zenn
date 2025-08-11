@@ -42,11 +42,11 @@
 /* Mobile responsive styling */
 @media (max-width: 768px) {
   .editor-container {
-    width: 80% !important;
-    max-width: 80% !important;
+    width: 90% !important;
+    max-width: 90% !important;
     margin: 0 auto !important;
-    padding-left: 10% !important;
-    padding-right: 10% !important;
+    padding-left: 5% !important;
+    padding-right: 5% !important;
   }
 
   /* Make editor area more tappable on mobile */

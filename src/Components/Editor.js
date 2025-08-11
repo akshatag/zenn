@@ -568,13 +568,20 @@ function Editor(props) {
 
     const noSoundList = ['Enter', 'Backspace', 'Esc', 'ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'Shift']
 
-    if(!noSoundList.includes(event.key) && !event.metaKey) {
+    // Skip sound effects on mobile devices (they have their own feedback)
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                          'ontouchstart' in window;
+
+    if(!noSoundList.includes(event.key) && !event.metaKey && !isMobileDevice) {
       try{
         sound.play()
         lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
       } catch (error) {
         alert(error.message)
       } 
+    } else if (!noSoundList.includes(event.key) && !event.metaKey) {
+      // Still update timestamp on mobile for prompt effect timing
+      lastKeystrokeTimestamp.current = Math.floor(Date.now()/1000)
     }
   }
 
